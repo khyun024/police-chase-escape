@@ -1,0 +1,17 @@
+{
+  "name": "경찰 추격 탈출",
+  "short_name": "추격탈출",
+  "description": "도로에서 순찰차를 피해 도주하는 모바일 웹 게임. 기울기 조향·진동·흔들기 연막 지원.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "portrait",
+  "background_color": "#0b0e14",
+  "theme_color": "#0b0e14",
+  "categories": ["games"],
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
