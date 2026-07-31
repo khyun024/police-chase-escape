@@ -11,6 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="경찰 추격 탈출">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.svg">
+<script src="shared.js"></script>
 <style>
   :root{
     --safe-t: env(safe-area-inset-top, 0px);
@@ -91,10 +92,39 @@
     background:rgba(8,10,16,.82); border:1px solid rgba(255,255,255,.14); opacity:0; transition:opacity .2s}
   #toast.show{opacity:1}
 </style>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* 공용 레이어에 맞춘 2부 보정 — 1부와 같은 색·타이포를 쓴다 */
+  body{background:var(--bg)}
+  .sheet{background:radial-gradient(120% 80% at 50% 0%, rgba(255,66,87,.13), transparent 60%), rgba(6,8,11,.92)}
+  h1 span{background:linear-gradient(90deg,var(--red),var(--orange)); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .tag{background:rgba(255,66,87,.14); color:#ff8f9c; border-color:rgba(255,66,87,.32)}
+  .card,.score{background:var(--panel); border-color:var(--line)}
+  .score b{font-family:var(--mono); font-weight:700}
+  .sub,.card h3,.score span,.feat em{color:var(--dim)}
+  .feat em,.card h3{font-family:var(--mono)}
+  #boost{border-color:rgba(87,216,255,.45); color:#cdefff;
+    background:radial-gradient(circle at 50% 120%, rgba(87,216,255,.38), rgba(87,216,255,.07))}
+  #boost.on{background:radial-gradient(circle at 50% 120%, rgba(87,216,255,.85), rgba(87,216,255,.28))}
+  #smoke{border-color:rgba(255,217,160,.42); color:var(--cream);
+    background:radial-gradient(circle at 50% 120%, rgba(255,217,160,.26), rgba(255,217,160,.05))}
+  #toast{background:rgba(20,25,34,.92); border-color:var(--line)}
+</style>
 </head>
-<body>
+<body class="ch2">
 <div id="wrap">
   <canvas id="cv"></canvas>
+
+  <!-- 1부에서 곧장 넘어왔을 때의 연결 장면 -->
+  <div class="x-cut" id="cut">
+    <button class="skip" id="cutSkip">건너뛰기 ›</button>
+    <div class="mark">CHAPTER 2 — 도로</div>
+    <p class="beat" id="beat1">담장 아래로 뛰어내렸다. 발목이 저리지만 멈출 수 없다.<br>숲을 300m 내려가자 국도가 나온다.</p>
+    <p class="beat" id="beat2">갓길에 <b>시동이 걸린 채 서 있는 차</b> 한 대.<br>운전석 문을 당긴다. 열린다.</p>
+    <p class="beat dim" id="beat3">백미러 저 끝에서 파란 불빛이 번진다.</p>
+    <div class="carry" id="cutCarry"></div>
+    <button class="btn go" id="cutGo">액셀을 밟는다</button>
+  </div>
 
   <div id="boost" class="pad hide">부스터<small>NOS</small></div>
   <div id="smoke" class="pad hide">연막<small>흔들기</small></div>
@@ -508,10 +538,12 @@ const spawn = { traffic:0, cop:0, item:0, hazard:0 };
 
 /* ---------------------------------------------------------------- 화면 전환 */
 function show(id){ ['menu','pause','over'].forEach(k => $('#'+k).classList.toggle('hide', k !== id)); }
+let chapterChip = null;
 function hud(on){
   boostBtn.classList.toggle('hide', !on);
   smokeBtn.classList.toggle('hide', !on);
   $('#pauseBtn').classList.toggle('hide', !on);
+  if(chapterChip) chapterChip.classList.toggle('hide', on);   // 주행 중에는 챕터 칩을 비운다
 }
 function startGame(){
   Audio2.unlock(); Audio2.mute(!opt.sound);
@@ -580,8 +612,8 @@ $('#quitBtn').onclick   = () => {   // 기록만 남기고 메뉴로
   toMenu();
 };
 $('#pauseBtn').onclick  = () => doPause();
-$('#prisonBtn').onclick = () => { location.href = 'prison.html'; };
-$('#hubBtn').onclick    = () => { location.href = 'index.html'; };
+$('#prisonBtn').onclick = () => X.go('prison.html');
+$('#hubBtn').onclick    = () => X.go('index.html');
 
 /* ---------------------------------------------------------------- 액션 */
 function useSmoke(){
@@ -1101,19 +1133,21 @@ function drawHUD(){
   const top = 14 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-t')) || 0);
   ctx.textBaseline = 'top';
 
+  const MONO = 'ui-monospace,Menlo,Consolas,monospace';   // 1부 HUD와 같은 서체 계열
+
   // 점수
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#fff'; ctx.font = '800 30px -apple-system,system-ui';
+  ctx.fillStyle = '#eef3f8'; ctx.font = '800 30px '+MONO;
   ctx.fillText((score|0).toLocaleString(), 16, top+8);
-  ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.font = '700 11px system-ui';
+  ctx.fillStyle = 'rgba(238,243,248,.42)'; ctx.font = '700 10px '+MONO;
   ctx.fillText('SCORE  ·  BEST ' + store.best.toLocaleString(), 17, top+42);
 
   // 속도 / 거리
   ctx.textAlign = 'right';
-  ctx.fillStyle = '#fff'; ctx.font = '800 22px system-ui';
+  ctx.fillStyle = '#eef3f8'; ctx.font = '800 21px '+MONO;
   ctx.fillText((player.v/4|0) + ' km/h', W-70, top+10);
-  ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.font = '700 11px system-ui';
-  ctx.fillText((dist|0).toLocaleString() + ' m  ·  LEVEL ' + heat, W-70, top+38);
+  ctx.fillStyle = 'rgba(238,243,248,.42)'; ctx.font = '700 10px '+MONO;
+  ctx.fillText((dist|0).toLocaleString() + ' m  ·  CH.2 / LV ' + heat, W-70, top+38);
 
   // 콤보
   if(combo > 0){
@@ -1127,7 +1161,7 @@ function drawHUD(){
   ctx.fillStyle = 'rgba(255,255,255,.10)'; rr(bx,by,bw,bh,5); ctx.fill();
   const fh = bh*capture/100;
   const grad = ctx.createLinearGradient(0,by+bh-fh,0,by+bh);
-  grad.addColorStop(0,'#ff2b40'); grad.addColorStop(1,'#ffb03b');
+  grad.addColorStop(0,'#ff4257'); grad.addColorStop(1,'#ff8a3d');
   ctx.fillStyle = grad; rr(bx, by+bh-fh, bw, fh, 5); ctx.fill();
   if(capture > 60){
     ctx.save(); ctx.globalAlpha = 0.5+0.5*Math.sin(performance.now()/90);
@@ -1139,7 +1173,7 @@ function drawHUD(){
   ctx.fillStyle = 'rgba(255,255,255,.10)'; rr(ex,by,bw,bh,5); ctx.fill();
   const eh = bh*boostFuel/100;
   const g2 = ctx.createLinearGradient(0,by+bh-eh,0,by+bh);
-  g2.addColorStop(0,'#8fd0ff'); g2.addColorStop(1,'#2f7fe8');
+  g2.addColorStop(0,'#a8e8ff'); g2.addColorStop(1,'#2ba6d6');
   ctx.fillStyle = g2; rr(ex, by+bh-eh, bw, eh, 5); ctx.fill();
 
   ctx.fillStyle='rgba(255,255,255,.35)'; ctx.font='700 9px system-ui';
@@ -1184,8 +1218,44 @@ function frame(now){
   }
 }
 
+/* ---------------------------------------------------------------- 1부 → 2부 연결 장면
+   담장을 넘은 직후라면 메뉴를 건너뛰고 곧바로 이어지는 장면을 보여준 뒤 주행을 시작한다. */
+function runCutscene(){
+  const cut = $('#cut');
+  cut.classList.add('show');
+  $('#cutCarry').innerHTML =
+    '<div class="tr">1부 기록<b>'+Carry.grade+' · '+Carry.time+'초</b></div>'+
+    '<div class="tr">챙겨 나온 것<b>연막 '+Carry.smoke+' · 부스터 '+Carry.boost+'%</b></div>'+
+    (Carry.bonus ? '<div class="tr">탈옥 보너스<b>+'+Carry.bonus.toLocaleString()+'</b></div>' : '')+
+    '<div class="tr">'+(Carry.startCapture ? '수배 확산' : '추격까지')+
+      '<b>'+(Carry.startCapture ? '게이지 '+Carry.startCapture+'%로 시작' : Carry.copDelay+'초')+'</b></div>';
+
+  const steps = [
+    [ 200, () => $('#beat1').classList.add('in')],
+    [1900, () => $('#beat2').classList.add('in')],
+    [3500, () => $('#beat3').classList.add('in')],
+    [4400, () => $('#cutCarry').classList.add('in')],
+    [5000, () => $('#cutGo').classList.add('in')],
+  ];
+  const timers = steps.map(([ms, fn]) => setTimeout(fn, ms));
+  const finishIntro = () => {           // 건너뛰기 — 남은 연출을 즉시 끝낸다
+    timers.forEach(clearTimeout);
+    steps.forEach(([,fn]) => fn());
+  };
+  $('#cutSkip').onclick = finishIntro;
+  $('#cutGo').onclick = () => {
+    timers.forEach(clearTimeout);
+    cut.classList.remove('show');
+    startGame();
+  };
+}
+
 /* ---------------------------------------------------------------- 부트 */
-resize(); renderFeatures(); renderCarry(); toMenu();
+resize(); renderFeatures(); renderCarry();
+chapterChip = X.chip(2);
+const jumped = Carry && X.cameFromPrison();
+toMenu();
+if(jumped){ show(null); chapterChip.classList.add('hide'); runCutscene(); }
 if(opt.tilt && !feat.tiltPerm) requestTilt();      // 안드로이드/데스크톱은 즉시 부착
 rafId = requestAnimationFrame(t => { lastT = t; frame(t); });
 

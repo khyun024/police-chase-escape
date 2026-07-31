@@ -1,0 +1,93 @@
+/* =========================================================================
+   ESCAPE 7 — 공용 인터페이스 레이어
+   허브 · 1부(감옥) · 2부(도로)가 같은 색·타이포·버튼·전환을 쓰도록 맞춘다.
+   각 페이지의 <style> 뒤에 로드되어 공통 규칙을 덮어쓴다.
+   ========================================================================= */
+:root{
+  --bg:#0a0c10; --panel:#141922; --line:#242c38;
+  --fg:#eef3f8; --dim:#8494a4;
+  --orange:#ff8a3d; --cream:#ffd9a0; --red:#ff4257; --cyan:#57d8ff; --green:#5be08a;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+
+  /* 챕터별 강조색 — 1부 주황, 2부 적색 */
+  --accent:var(--orange); --accent-ink:#20120a;
+  --radius:14px;
+}
+body.ch2{ --accent:var(--red); --accent-ink:#2a0a0e; }
+
+html,body{ background:var(--bg); color:var(--fg); font-family:var(--sans); }
+
+/* ---------------- 공용 버튼 ---------------- */
+.btn{
+  appearance:none; border:0; width:100%; display:block; text-align:center; text-decoration:none;
+  padding:16px; margin-top:10px; border-radius:var(--radius);
+  background:var(--accent); color:var(--accent-ink);
+  font-family:var(--sans); font-size:16px; font-weight:900; letter-spacing:-.01em;
+  box-shadow:0 10px 26px -14px var(--accent);
+}
+.btn.ghost{
+  background:transparent; border:1px solid var(--line); color:var(--dim);
+  font-weight:600; font-size:13.5px; padding:13px; box-shadow:none;
+}
+.btn:active{ transform:translateY(1px); }
+.btn small{ display:block; font-size:11.5px; font-weight:600; opacity:.72; margin-top:3px; }
+
+/* ---------------- 챕터 표시 ---------------- */
+.x-chip{
+  position:fixed; top:calc(8px + env(safe-area-inset-top)); left:50%; transform:translateX(-50%);
+  z-index:60; display:flex; gap:7px; align-items:center;
+  font-family:var(--mono); font-size:10px; letter-spacing:.18em; color:var(--dim);
+  background:rgba(10,12,16,.74); border:1px solid var(--line); border-radius:99px;
+  padding:5px 12px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); pointer-events:none;
+  transition:opacity .3s;
+}
+.x-chip b{ color:var(--fg); font-weight:700; letter-spacing:.06em; }
+.x-chip .dot{ width:5px; height:5px; border-radius:50%; background:#2c3543; }
+.x-chip .dot.on{ background:var(--accent); }
+.x-chip.hide{ opacity:0; }
+
+/* ---------------- 장면 전환 암전 ---------------- */
+#x-fade{
+  position:fixed; inset:0; background:#05070a; z-index:9998;
+  opacity:1; pointer-events:none; transition:opacity .45s ease;
+}
+#x-fade.clear{ opacity:0; }
+#x-fade.on{ opacity:1; }
+
+/* ---------------- 컷신(장 사이 연결 화면) ---------------- */
+.x-cut{
+  position:fixed; inset:0; z-index:70; display:none; flex-direction:column;
+  align-items:center; justify-content:center; text-align:center;
+  padding:calc(28px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));
+  background:radial-gradient(120% 70% at 50% 0%, #171d26 0%, #06080b 60%);
+  font-family:var(--sans);
+}
+.x-cut.show{ display:flex; }
+.x-cut .mark{
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.34em; color:var(--accent); margin-bottom:18px;
+}
+.x-cut .beat{
+  font-size:17px; line-height:1.85; color:#c9d3de; max-width:330px; margin:0 0 14px;
+  opacity:0; transform:translateY(8px); transition:opacity .5s ease, transform .5s ease;
+}
+.x-cut .beat.in{ opacity:1; transform:none; }
+.x-cut .beat b{ color:var(--fg); }
+.x-cut .beat.dim{ font-size:14px; color:var(--dim); }
+.x-cut .carry{
+  opacity:0; transition:opacity .5s ease; width:100%; max-width:330px; margin:6px 0 4px;
+  border:1px solid var(--line); border-radius:var(--radius); background:rgba(20,25,34,.6); padding:12px 14px;
+}
+.x-cut .carry.in{ opacity:1; }
+.x-cut .carry .tr{
+  display:flex; font-family:var(--mono); font-size:12px; color:var(--dim);
+  padding:5px 0; border-bottom:1px solid #1b222c;
+}
+.x-cut .carry .tr:last-child{ border-bottom:0; }
+.x-cut .carry .tr b{ margin-left:auto; color:var(--fg); font-weight:400; }
+.x-cut .go{ width:100%; max-width:330px; opacity:0; transition:opacity .45s ease; }
+.x-cut .go.in{ opacity:1; }
+.x-cut .skip{
+  position:absolute; right:16px; top:calc(14px + env(safe-area-inset-top));
+  font-family:var(--mono); font-size:11px; color:#6d7986; background:none; border:0; padding:8px;
+}

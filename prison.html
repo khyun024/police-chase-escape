@@ -73,8 +73,17 @@
   .tr{display:flex;font-family:var(--mono);font-size:12.5px;color:var(--dim);border-bottom:1px solid #1b222c;padding:6px 2px}
   .tr b{margin-left:auto;color:var(--fg);font-weight:400}
 </style>
+<link rel="stylesheet" href="shared.css">
+<style>
+  /* 공용 레이어와 어긋나는 부분만 보정 */
+  h1 small{color:var(--accent)}
+  .opt.on{border-color:var(--accent)}
+  .pad button.jump{color:var(--accent);border-color:#5a3a22}
+  .screen{padding-top:44px}          /* 상단 챕터 칩 자리 */
+  #sc-play{padding-top:0}
+</style>
 </head>
-<body>
+<body class="ch1">
 <div class="app">
 <main id="stack">
 
@@ -137,12 +146,14 @@
 </main>
 </div>
 
+<script src="shared.js"></script>
 <script>
 "use strict";
 const $=(s,r=document)=>r.querySelector(s);
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
 const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
 const Clock={t:0, adv(dt){this.t+=dt*1000}};
+
 
 /* ===================================================================
    2부(도로 추격) 인계 — 1부 성적이 도주 조건이 된다
@@ -762,8 +773,15 @@ $('#btn-start').onclick=()=>G.begin();
 $('#btn-keys').onclick=()=>alert('←→ 이동 · 스페이스/Z 점프(길게 누르면 높이) · ↓ 웅크리기 · ↑ 사다리');
 $('#btn-next').onclick=()=>G.next();
 $('#btn-again').onclick=()=>G.screen('sc-title');
-$('#btn-drive').onclick=()=>{ location.href='chase.html?from=prison'; };
-$('#btn-hub').onclick=()=>{ location.href='index.html'; };
+/* 2부로 — 암전으로 덮은 뒤 넘어간다(같은 게임의 장면 전환처럼) */
+$('#btn-drive').onclick=()=>{ X.go('chase.html?from=prison', {jump:true}); };
+$('#btn-hub').onclick=()=>{ X.go('index.html'); };
+
+/* 챕터 표시 — 플레이 중에는 화면을 가리지 않게 숨긴다 */
+const chip = X.chip(1);
+const syncChip = () => chip.classList.toggle('hide', $('#sc-play').classList.contains('show'));
+new MutationObserver(syncChip).observe($('#stack'), {subtree:true, attributes:true, attributeFilter:['class']});
+syncChip();
 document.addEventListener('gesturestart',e=>e.preventDefault());
 document.addEventListener('dblclick',e=>e.preventDefault());
 </script>

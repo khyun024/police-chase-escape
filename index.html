@@ -103,6 +103,21 @@
   .feat.no{opacity:.45} .feat.no i{background:#1a2027; color:#8b98a6}
   .feat em{font-style:normal; color:var(--dim); font-size:11.5px; margin-left:auto; font-family:var(--mono)}
 </style>
+<link rel="stylesheet" href="shared.css">
+<script src="shared.js"></script>
+<style>
+  /* 허브는 두 챕터의 색을 함께 쓴다 */
+  body{position:static; overflow:auto}
+  h1 em{background:linear-gradient(90deg,var(--orange),var(--red));
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .kicker{color:var(--orange)}
+  .card{background:linear-gradient(180deg,var(--panel),#0d1117)}
+  .cover .siren{background:linear-gradient(90deg,var(--red) 0 50%, var(--cyan) 50% 100%)}
+  .cover .light{background:conic-gradient(from 160deg at 50% 0%, transparent 0deg, rgba(255,138,61,.20) 22deg, transparent 44deg)}
+  td b{color:var(--orange)}
+  .story .who{color:var(--orange)}
+  .btn.ch2{--accent:var(--red); --accent-ink:#2a0a0e}
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -122,9 +137,9 @@
     <div class="siren"></div>
   </div>
 
-  <a class="btn" href="prison.html">1부부터 시작 — 7번의 탈옥<small>담장을 넘으면 그대로 2부로 이어진다</small></a>
-  <a class="btn ghost" id="resume" href="chase.html">이어서 2부로 — 도로 추격전<small id="resumeInfo">인계 기록이 남아 있다</small></a>
-  <a class="btn ghost" href="chase.html?solo=1">2부만 플레이 — 도로 추격전<small>인계 없이 기본 조건으로 시작</small></a>
+  <a class="btn" href="prison.html" data-go="prison.html">1부부터 시작 — 7번의 탈옥<small>담장을 넘으면 끊기지 않고 2부로 이어진다</small></a>
+  <a class="btn ch2" id="resume" href="chase.html?from=prison" data-go="chase.html?from=prison" data-jump>이어서 2부로 — 도로 추격전<small id="resumeInfo">인계 기록이 남아 있다</small></a>
+  <a class="btn ghost" href="chase.html?solo=1" data-go="chase.html?solo=1">2부만 플레이 — 도로 추격전<small>인계 없이 기본 조건으로 시작</small></a>
 
   <!-- ================= 이야기 ================= -->
   <p class="sec">PROLOGUE</p>
