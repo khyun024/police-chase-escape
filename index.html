@@ -137,7 +137,7 @@
     <div class="siren"></div>
   </div>
 
-  <a class="btn" href="prison.html" data-go="prison.html">1부부터 시작 — 7번의 탈옥<small>담장을 넘으면 끊기지 않고 2부로 이어진다</small></a>
+  <a class="btn" href="prison.html" data-go="prison.html">1부부터 시작 — 감옥 탈출<small>센서 8관문 · 담장을 넘으면 끊기지 않고 2부로 이어진다</small></a>
   <a class="btn ch2" id="resume" href="chase.html?from=prison" data-go="chase.html?from=prison" data-jump>이어서 2부로 — 도로 추격전<small id="resumeInfo">인계 기록이 남아 있다</small></a>
   <a class="btn ghost" href="chase.html?solo=1" data-go="chase.html?solo=1">2부만 플레이 — 도로 추격전<small>인계 없이 기본 조건으로 시작</small></a>
 
@@ -246,8 +246,12 @@ try{
   const c = JSON.parse(localStorage.getItem('escape7.handoff'));
   if(c && c.ts && Date.now() - c.ts < 2*60*60*1000){
     $('#resume').style.display = 'block';
+    // 1부 판(센서판=경보 / 액션판=붙잡힌 횟수)에 따라 표기를 맞춘다
+    const detail = c.alarm != null ? '경보 ' + c.alarm + '%'
+                 : c.deaths != null ? '붙잡힘 ' + c.deaths + '회' : '';
     $('#resumeInfo').textContent =
-      '1부 ' + c.grade + ' · ' + c.time + '초 · 붙잡힘 ' + c.deaths + '회 → 보너스 +' + c.bonus.toLocaleString();
+      '1부 ' + c.grade + ' · ' + c.time + '초' + (detail ? ' · ' + detail : '') +
+      ' → 보너스 +' + c.bonus.toLocaleString();
   }
 }catch(e){}
 
