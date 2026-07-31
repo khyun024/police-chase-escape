@@ -420,11 +420,16 @@ function TiltInput(host){
     get(){
       if(Sensors.hasOrient()){
         if(!cal) cal={b:Sensors.orient.beta, g:Sensors.orient.gamma};
-        return {
-          x: clamp((Sensors.orient.gamma-cal.g)/28, -1, 1),
-          y: clamp((Sensors.orient.beta -cal.b)/28, -1, 1),
-          sensor:true
+        const dg = Sensors.orient.gamma - cal.g, db = Sensors.orient.beta - cal.b;
+        /* 중립이 현재 자세를 천천히 따라간다 — 잡은 각도가 달라져도 한쪽으로 쏠리지 않는다.
+           거의 안 기울인 상태에서는 빠르게, 확실히 꺾고 있을 때는 거의 고정. */
+        cal.g += dg * (Math.abs(dg) < 5 ? 0.012 : 0.0004);
+        cal.b += db * (Math.abs(db) < 5 ? 0.012 : 0.0004);
+        const shape = v => {                       // 작은 떨림 무시 + 중앙은 부드럽게
+          const m = clamp((Math.abs(v) - 1.5) / 16.5, 0, 1);
+          return Math.sign(v) * (0.45*m + 0.55*m*m);
         };
+        return { x: shape(dg), y: shape(db), sensor:true };
       }
       return {x:drag.x, y:drag.y, sensor:false};
     },

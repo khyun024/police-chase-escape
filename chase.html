@@ -452,7 +452,7 @@ const Audio2 = (() => {
 
 /* ---------------------------------------------------------------- 입력 */
 const input = { steer:0, drag:null, keyL:false, keyR:false, boost:false };
-let tiltRaw = null, tiltZero = 0, tiltActive = false;
+let tiltRaw = null, tiltZero = 0, tiltActive = false, edgeT = 0, reCenterMsg = 0;
 
 function onOrient(e){
   if(e.gamma == null) return;
@@ -473,6 +473,20 @@ function requestTilt(){
 }
 function calibrateTilt(){ if(tiltRaw != null) tiltZero = tiltRaw; }
 
+/* 기울기 조향 — 잡은 자세를 알아서 따라간다.
+   · 중립(tiltZero)이 천천히 현재 각도를 쫓아가므로 자세가 바뀌어도 한쪽으로 쏠리지 않는다
+     (거의 안 기울인 상태에서 빠르게 재중립, 확실히 꺾고 있을 때는 거의 고정)
+   · 작은 떨림은 무시(데드존), 중앙은 부드럽고 끝은 확실하게 */
+function tiltSteer(dt){
+  if(tiltRaw == null || !tiltActive) return 0;
+  const raw = tiltRaw - tiltZero;
+  const follow = Math.abs(raw) < 5 ? 0.7 : 0.02;
+  tiltZero += (tiltRaw - tiltZero) * clamp(follow*dt, 0, 1);
+  const DEAD = 1.5, FULL = 16;                       // 1.5° 이하는 무시, 16°에서 최대
+  const m = clamp((Math.abs(raw) - DEAD) / (FULL - DEAD), 0, 1);
+  return Math.sign(raw) * (0.45*m + 0.55*m*m);
+}
+
 /* 흔들기 감지 */
 let shakeCool = 0, lastMag = 0;
 function onMotion(e){
@@ -484,8 +498,15 @@ function onMotion(e){
 if(feat.motion) addEventListener('devicemotion', onMotion);
 
 /* 드래그 조향 */
+let lastTap = 0;
 wrapEl.addEventListener('pointerdown', e => {
   if(e.target.closest('.pad,.btn,.sheet,#pauseBtn')) return;
+  // 두 번 두드리면 지금 자세를 중립으로 — 기울기가 틀어졌을 때 즉시 복구
+  const t = performance.now();
+  if(t - lastTap < 330 && state === 'playing'){
+    calibrateTilt(); buzz([12,40,12]); toast('기울기 중립을 지금 자세로 맞췄다', 1200);
+  }
+  lastTap = t;
   input.drag = { id:e.pointerId, x:e.clientX, base:player ? player.x : W/2 };
 });
 wrapEl.addEventListener('pointermove', e => {
@@ -592,7 +613,11 @@ function startGame(){
   state = 'playing'; show(null); hud(true); requestWake();
   lastT = performance.now();
   toast(Carry ? '훔친 차로 출발 — 사이렌이 따라붙기까지 ' + Carry.copDelay + '초'
-              : (opt.tilt && feat.tilt ? '폰을 기울여 조향 · 드래그도 가능' : '화면을 좌우로 드래그해 조향'), 2400);
+              : (opt.tilt && feat.tilt ? '지금 자세가 중립이다 · 기울여 조향, 드래그도 가능'
+                                       : '화면을 좌우로 드래그해 조향'), 2400);
+  if(opt.tilt && feat.tilt) setTimeout(() => {
+    if(state === 'playing') toast('기울기가 이상하면 화면을 두 번 두드려라', 2200);
+  }, 3200);
 }
 function doPause(){
   if(state !== 'playing') return;
@@ -721,7 +746,7 @@ function update(dt){
 
   /* --- 조향 입력 --- */
   let steer = 0;
-  if(opt.tilt && tiltRaw != null && tiltActive) steer += clamp((tiltRaw - tiltZero)/22, -1, 1);
+  if(opt.tilt) steer += tiltSteer(dt);
   if(input.drag) steer += clamp((input.drag.x - player.x)/(road.lane*0.9), -1, 1);
   if(input.keyL) steer -= 1;
   if(input.keyR) steer += 1;
@@ -761,7 +786,18 @@ function update(dt){
     player.x = clamp(player.x, L, R); player.vx *= -0.15;
     if(Math.random()<0.5){ Audio2.scrape(); sparks(player.x, car.y+car.h*0.3); }
     player.v *= (1 - 1.1*dt); score = Math.max(0, score - 12*dt);
-  }
+    // 손을 대지 않았는데 가장자리에 계속 붙어 있다 = 중립이 틀어졌다는 뜻 → 스스로 바로잡는다
+    if(opt.tilt && !input.drag && !input.keyL && !input.keyR){
+      edgeT += dt;
+      if(edgeT > 0.8){
+        calibrateTilt(); edgeT = 0; buzz(15);
+        if(performance.now() - reCenterMsg > 8000){
+          reCenterMsg = performance.now();
+          toast('기울기 중립을 지금 자세로 맞췄다', 1400);
+        }
+      }
+    }
+  } else edgeT = 0;
 
   /* --- 타이머 --- */
   smokeT = Math.max(0, smokeT - dt);

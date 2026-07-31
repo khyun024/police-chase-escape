@@ -8,7 +8,7 @@
   "use strict";
 
   /* 빌드 표시 — 폰에서 어떤 버전이 떠 있는지 눈으로 확인할 수 있게 */
-  const BUILD = '2026-07-31 · v7';
+  const BUILD = '2026-07-31 · v8';
 
   /* ---------- 암전 오버레이 ---------- */
   const fade = document.createElement('div');
