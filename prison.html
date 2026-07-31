@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0c10">
+<title>ESCAPE 7 · 1부 — 7번의 탈옥</title>
+<style>
+  :root{
+    --bg:#0a0c10; --card:#141922; --line:#242c38; --fg:#eef3f8; --dim:#8494a4;
+    --orange:#ff8a3d; --cream:#ffd9a0; --red:#ff4257; --cyan:#57d8ff; --green:#5be08a;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(--fg);
+       font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+       user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:none}
+  .app{display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;
+       padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  #stack{position:relative;flex:1;min-height:0}
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;padding:20px;overflow-y:auto}
+  .screen.show{display:flex;animation:in .26s ease}
+  @keyframes in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .mid{justify-content:center}
+  h1{font-size:34px;margin:8px 0 4px;line-height:1.1;letter-spacing:-.02em}
+  h1 small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--orange);margin-bottom:8px}
+  p{line-height:1.7;font-size:14px;color:var(--dim)}
+  .btn{appearance:none;border:0;width:100%;padding:16px;margin-top:10px;border-radius:14px;
+       background:var(--orange);color:#20120a;font-family:inherit;font-size:16px;font-weight:900;
+       box-shadow:0 10px 26px -14px var(--orange)}
+  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:600;font-size:13.5px;box-shadow:none;padding:13px}
+  .btn:active{transform:translateY(1px)}
+  .keys{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+  .keys span{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--line);
+             border-radius:99px;padding:5px 10px}
+  .opts{display:flex;gap:8px;margin-top:14px}
+  .opt{flex:1;appearance:none;border:1px solid var(--line);background:var(--card);color:var(--fg);
+       border-radius:12px;padding:11px 8px;font-family:inherit;text-align:center}
+  .opt.on{border-color:var(--orange);background:#2a1a10}
+  .opt b{display:block;font-size:14px}
+  .opt span{font-family:var(--mono);font-size:9.5px;color:var(--dim)}
+
+  /* ---- 플레이 ---- */
+  #sc-play{padding:0}
+  .hud{display:flex;align-items:center;gap:8px;padding:10px 14px 8px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .hud .nm{font-family:inherit;font-size:14px;font-weight:800;color:var(--fg)}
+  .hud .r{margin-left:auto;text-align:right;line-height:1.5}
+  .hud .k{color:var(--cream)}
+  .stage{position:relative;flex:1;min-height:0}
+  .stage canvas{display:block;width:100%;height:100%}
+  .ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
+      gap:10px;background:rgba(10,12,16,.86);padding:24px;text-align:center}
+  .ov.show{display:flex}
+  .ov h2{margin:0;font-size:24px}
+  .ov .btn{max-width:260px}
+
+  /* ---- 조작 ---- */
+  .pad{display:flex;align-items:flex-end;gap:10px;padding:10px 12px 12px}
+  .pad .side{display:flex;gap:8px}
+  .pad button{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--fg);
+              border-radius:16px;font-family:inherit;font-weight:800;font-size:20px;
+              width:62px;height:58px;display:flex;align-items:center;justify-content:center}
+  .pad button.jump{width:96px;height:70px;background:#2a1c12;border-color:#5a3a22;color:var(--orange);font-size:15px}
+  .pad button.act{width:62px;height:58px;font-size:13px;color:var(--cyan);border-color:#22414f}
+  .pad button:active{background:#1d2532;transform:translateY(1px)}
+  .pad .sp{margin-left:auto}
+  .hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(20,25,34,.92);
+        border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--fg);
+        opacity:0;transition:.2s;pointer-events:none;white-space:nowrap;max-width:92%}
+  .hint.show{opacity:1}
+  .tbl{display:flex;flex-direction:column;gap:5px;margin:10px 0}
+  .tr{display:flex;font-family:var(--mono);font-size:12.5px;color:var(--dim);border-bottom:1px solid #1b222c;padding:6px 2px}
+  .tr b{margin-left:auto;color:var(--fg);font-weight:400}
+</style>
+</head>
+<body>
+<div class="app">
+<main id="stack">
+
+  <section class="screen show mid" id="sc-title">
+    <h1><small>PRISONER 7 · 1부</small>7번의 탈옥</h1>
+    <p>달리고, 뛰고, 매달리고, 숨어라.<br>
+    간수의 <b style="color:var(--cream)">손전등 빛에 몸이 닿는 순간</b> 끝이다.<br>
+    다섯 구역을 지나 담장 밖으로.<br><br>
+    <span style="font-size:13px">담장을 넘으면 그대로 <b style="color:var(--cream)">2부 · 도로 위 추격전</b>으로 이어진다.
+    <b>붙잡힌 횟수와 탈출 시간이 그대로 인계</b>되니, 깔끔하고 빠르게 나가라.</span></p>
+    <div class="keys">
+      <span>← → 이동</span><span>점프 (길게 = 높이)</span><span>↓ 웅크리기</span><span>↑ 사다리·문</span>
+    </div>
+    <div class="opts" id="diff-opts">
+      <button class="opt on" data-d="easy"><b>쉬움</b><span>간수 느림 · 무적 1.5초</span></button>
+      <button class="opt" data-d="normal"><b>보통</b><span>원래 난이도</span></button>
+    </div>
+    <button class="btn" id="btn-start">탈옥 개시</button>
+    <button class="btn ghost" id="btn-keys">키보드 조작</button>
+  </section>
+
+  <section class="screen" id="sc-play">
+    <div class="hud">
+      <span class="nm" id="h-name">—</span>
+      <span id="h-lv">1/5</span>
+      <span class="r" id="h-right">—</span>
+    </div>
+    <div class="stage" id="stage">
+      <div class="hint" id="hint"></div>
+      <div class="ov" id="ov-clear">
+        <h2 id="ovc-h">구역 돌파</h2>
+        <p id="ovc-p" style="margin:0">—</p>
+        <button class="btn" id="btn-next">다음 구역</button>
+      </div>
+    </div>
+    <div class="pad">
+      <div class="side">
+        <button data-k="left">←</button>
+        <button data-k="right">→</button>
+        <button data-k="down" class="act">웅크리기</button>
+      </div>
+      <div class="sp"></div>
+      <div class="side">
+        <button data-k="up" class="act">↑</button>
+        <button data-k="jump" class="jump">점프</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="screen mid" id="sc-end">
+    <h1 style="font-size:28px" id="e-h">담장 밖</h1>
+    <p id="e-p">—</p>
+    <div class="tbl" id="e-t"></div>
+    <div class="tbl" id="e-carry" style="margin-top:10px"></div>
+    <button class="btn" id="btn-drive">2부 — 차를 훔쳐 달아난다 →</button>
+    <button class="btn ghost" id="btn-again">1부 다시 탈옥</button>
+    <button class="btn ghost" id="btn-hub">타이틀로</button>
+  </section>
+
+</main>
+</div>
+
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
+const Clock={t:0, adv(dt){this.t+=dt*1000}};
+
+/* ===================================================================
+   2부(도로 추격) 인계 — 1부 성적이 도주 조건이 된다
+=================================================================== */
+const Handoff = {
+  key:'escape7.handoff',
+  build(time, deaths, grade, diff){
+    const tier = deaths===0 ? 0 : deaths<=3 ? 1 : deaths<=8 ? 2 : 3;
+    const copDelay     = [9, 6, 3, 0][tier];      // 순찰차 첫 투입까지 여유(초)
+    const smoke        = [3, 2, 2, 1][tier];
+    const boost        = [100, 100, 75, 55][tier];
+    const startCapture = [0, 0, 0, 15][tier];
+    // 빠를수록 보너스 — 4분(240초) 기준, 30초당 150점
+    const speed = Math.max(0, Math.round((240 - time) / 30) * 150);
+    let bonus = [2000, 1200, 600, 0][tier] + speed;
+    if(diff === '쉬움') bonus = Math.round(bonus * 0.7);
+    return { from:'prison', mode:'action', time, deaths, grade, diff, tier,
+             copDelay, smoke, boost, startCapture, bonus, ts:Date.now() };
+  },
+  save(c){ try{ localStorage.setItem(this.key, JSON.stringify(c)); }catch(e){} }
+};
+
+/* ===================================================================
+   레벨 — 원시 도형으로 조립한다 (ASCII보다 실수가 적다)
+=================================================================== */
+const H=14;
+function build(spec){
+  const W=spec.w;
+  const g=[]; for(let y=0;y<H;y++) g.push(new Array(W).fill('.'));
+  const set=(x,y,c)=>{ if(x>=0&&x<W&&y>=0&&y<H) g[y][x]=c; };
+  const box=(x,y,w,h,c)=>{ for(let j=0;j<h;j++) for(let i=0;i<w;i++) set(x+i,y+j,c); };
+
+  // 바깥 벽
+  box(0,0,1,H,'#'); box(W-1,0,1,H,'#'); box(0,0,W,1,'#');
+  // 바닥(구간별) — 나머지는 낙사 구멍
+  (spec.ground||[]).forEach(([x0,x1,y=H-2])=>box(x0,y,x1-x0,H-y,'#'));
+  (spec.blocks||[]).forEach(([x,y,w,h])=>box(x,y,w,h,'#'));
+  (spec.plats||[]).forEach(([x,y,w])=>box(x,y,w,1,'='));
+  (spec.ladders||[]).forEach(([x,y,h])=>box(x,y,1,h,'L'));
+  (spec.hazards||[]).forEach(([x,y,w])=>box(x,y,w,1,'^'));
+  // 철문은 천장까지 닿는다 — 2칸이면 점프로 넘어가 열쇠가 무의미해진다
+  (spec.doors||[]).forEach(([x,y,h])=>box(x,y,1,h||6,'D'));
+  (spec.keys||[]).forEach(([x,y])=>set(x,y,'K'));
+  set(spec.exit[0], spec.exit[1], 'E');
+  set(spec.exit[0], spec.exit[1]-1, 'E');       // 출구는 2칸 높이 — 지나치기 어렵게
+
+  return {
+    name:spec.name, w:W, h:H, grid:g,
+    start:spec.start, exit:spec.exit, hint:spec.hint||'',
+    guards:(spec.guards||[]).map(q=>({x0:q[0], x1:q[1], y:q[2], sp:q[3]||3.2, look:q[4]||7})),
+    lights:(spec.lights||[]).map(l=>({x0:l[0], x1:l[1], y:l[2], r:l[3]||2.2, sp:l[4]||3})),
+    checks:spec.checks||[]
+  };
+}
+
+const LEVELS=[
+  build({ name:'A동 감방', w:56, hint:'점프는 길게 누르면 더 높이 뛴다',
+    ground:[[1,28],[31,55]],
+    blocks:[[12,10,1,2],[20,10,2,2]],
+    plats:[[34,10,5],[41,8,5]],      // 12 → 10 → 8: 한 번에 두 칸까지만 오를 수 있다
+    keys:[[43,7]],
+    doors:[[50,6,6]],
+    hazards:[[28,12,3]],
+    start:[3,11], exit:[53,11],
+    guards:[[22,27,12,2.6,6]],
+    checks:[[14,11],[24,11],[32,11],[45,11]] }),
+
+  build({ name:'중앙 복도', w:64, hint:'간수는 등 뒤를 못 본다 — 지나간 다음 움직여라',
+    ground:[[1,20],[23,42],[45,63]],
+    blocks:[[14,10,1,2],[33,10,1,2]],
+    plats:[[20,10,3],[27,6,6],[42,10,3],[52,10,4]],
+    ladders:[[26,6,6]],
+    keys:[[54,8]],
+    doors:[[59,6,6]],
+    hazards:[[20,12,3],[42,12,3]],
+    start:[3,11], exit:[61,11],
+    guards:[[5,18,12,3.0,7],[26,40,12,3.3,7],[46,57,12,2.8,6]],
+    checks:[[12,11],[24,11],[36,11],[46,11],[56,11]] }),
+
+  build({ name:'세탁실', w:68, hint:'천장이 낮은 곳은 ↓로 웅크려 통과한다',
+    ground:[[1,24],[27,46],[49,67]],
+    blocks:[[16,9,6,2],[36,10,1,2],[58,10,1,2]],   // 낮은 통로는 구덩이 앞에서 끝난다(일어설 자리 확보)
+    plats:[[27,9,5],[33,7,5],[41,9,4],[50,9,5]],
+    keys:[[35,6]],
+    doors:[[63,6,6]],
+    hazards:[[24,12,3],[46,12,3]],
+    start:[3,11], exit:[65,11],
+    guards:[[3,14,12,3.2,7],[28,44,12,3.5,8],[50,61,12,3.0,7]],
+    checks:[[13,11],[28,11],[38,11],[50,11],[60,11]] }),
+
+  build({ name:'옥상', w:70, hint:'서치라이트에 닿으면 즉시 발각된다',
+    ground:[[1,19],[22,35],[38,53],[56,69]],
+    blocks:[[45,10,1,2]],
+    plats:[[26,9,4],[42,9,4],[60,9,4]],
+    keys:[[62,8]],
+    doors:[[67,6,6]],
+    hazards:[[19,12,3],[35,12,3],[53,12,3]],
+    start:[3,11], exit:[68,11],
+    guards:[[23,32,12,3.4,7],[39,50,12,3.2,7]],
+    lights:[[3,16,12,2.4,4],[57,66,12,2.6,4.5]],
+    checks:[[10,11],[23,11],[30,11],[39,11],[48,11],[57,11]] }),
+
+  build({ name:'담장', w:76, hint:'마지막이다 — 멈추지 마라',
+    ground:[[1,23],[26,41],[44,59],[62,75]],
+    blocks:[[30,10,1,2],[50,10,1,2]],
+    plats:[[27,10,4],[36,6,5],[45,10,4],[64,10,4],[68,8,5]],
+    ladders:[[35,6,6]],
+    keys:[[70,7]],
+    doors:[[73,6,6]],
+    hazards:[[23,12,3],[41,12,3],[59,12,3]],
+    start:[3,11], exit:[74,11],
+    guards:[[4,20,12,3.8,8],[27,38,12,3.6,7],[45,56,12,3.8,8],[63,71,12,3.4,7]],
+    lights:[[24,38,12,2.4,5],[45,57,12,2.4,5.5]],
+    checks:[[12,11],[26,11],[35,11],[44,11],[54,11],[62,11],[70,11]] }),
+];
+
+/* ===================================================================
+   게임
+=================================================================== */
+const GRAV=44, MAXFALL=32, RUN=8.6, ACC=62, FRIC=54;
+const K={left:false,right:false,up:false,down:false,jump:false};
+
+/* 난이도 — 기본은 '쉬움'
+   gsp: 간수 이동속도 배율 / chase: 추격 배율 / look: 시야 거리 보정
+   grace: 서치라이트에 버틸 수 있는 시간 / inv: 부활 후 무적 시간 */
+const DIFF={
+  easy:  { name:'쉬움', gsp:0.72, chase:1.28, look:-2, grace:0.75, inv:1.5, jump:16.4, coyote:0.17, buf:0.18, lightR:0.82 },
+  normal:{ name:'보통', gsp:1.00, chase:1.55, look:0,  grace:0.20, inv:0.8, jump:15.8, coyote:0.12, buf:0.14, lightR:1.00 },
+};
+
+const G = {
+  lv:0, L:null, cv:null, g:null, cell:26, camx:0, camy:0,
+  p:null, guards:[], lights:[], keys:0, dead:0, done:false, t:0,
+  spawn:[3,11], shake:0, flash:0, parts:[], totalTime:0, totalDead:0,
+  jumpBuf:0, coyote:0, held:false,
+  D:DIFF.easy, diff:'easy', lit:0, inv:0,
+
+  screen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show', s.id===id)); },
+  hint(t){ const h=$('#hint'); if(!t){h.className='hint';return;} h.textContent=t; h.className='hint show';
+           clearTimeout(this._h); this._h=setTimeout(()=>h.className='hint', 3200); },
+
+  init(){
+    this.cv=document.createElement('canvas');
+    $('#stage').insertBefore(this.cv, $('#stage').firstChild);
+    this.g=this.cv.getContext('2d');
+    new ResizeObserver(()=>this.fit()).observe(this.cv);
+    this.fit();
+  },
+  fit(){
+    const r=this.cv.getBoundingClientRect();
+    const dpr=Math.min(2, devicePixelRatio||1);
+    this.vw=Math.max(1,r.width); this.vh=Math.max(1,r.height);
+    this.cv.width=Math.round(this.vw*dpr); this.cv.height=Math.round(this.vh*dpr);
+    this.g.setTransform(dpr,0,0,dpr,0,0);
+    // 가로로 최소 11칸 정도는 보여야 앞의 함정·간수에 반응할 수 있다
+    this.cell=Math.max(15, Math.min(this.vw/11.5, this.vh/H));
+  },
+
+  begin(){ this.lv=0; this.totalTime=0; this.totalDead=0; this.load(0); this.screen('sc-play'); },
+
+  load(i){
+    this.lv=i;
+    const src=LEVELS[i];
+    this.L={...src, grid:src.grid.map(r=>r.slice())};   // 원본 훼손 방지 (열쇠/문 상태)
+    const D=this.D;
+    this.guards=src.guards.map(q=>({...q, x:(q.x0+q.x1)/2, dir:1, alert:0,
+                                    sp:q.sp*D.gsp, look:Math.max(3, q.look+D.look)}));
+    this.lights=src.lights ? src.lights.map(l=>({...l, x:l.x0, dir:1,
+                                    sp:l.sp*D.gsp, r:l.r*D.lightR})) : [];
+    this.lit=0;
+    this.keys=0; this.dead=0; this.done=false; this.t=0;
+    this.spawn=src.start.slice();
+    this.parts=[];
+    this.respawn();
+    $('#h-name').textContent=src.name;
+    $('#h-lv').textContent=(i+1)+'/'+LEVELS.length;
+    $('#ov-clear').classList.remove('show');
+    this.hint(src.hint);
+  },
+
+  respawn(){
+    this.p={x:this.spawn[0]+0.5, y:this.spawn[1], vx:0, vy:0, face:1, onG:false,
+            crouch:false, climb:false, w:0.66, h:1.62, anim:0, land:0};
+    this.camx=this.p.x-6; this.camy=0;
+    this.lit=0;
+    this.inv=this.D.inv;                 // 부활 직후 잠시 무적 — 즉시 재체포 방지
+  },
+
+  at(x,y){
+    const L=this.L;
+    if(x<0||y<0||x>=L.w||y>=H) return '#';
+    return L.grid[y][x];
+  },
+  solidAt(x,y){
+    const c=this.at(x,y);
+    return c==='#' || c==='D';
+  },
+
+  /* --- 타일 충돌 (X 먼저, 그다음 Y) --- */
+  hitBox(px,py,w,h){
+    const x0=Math.floor(px-w/2), x1=Math.floor(px+w/2);
+    const y0=Math.floor(py-h), y1=Math.floor(py-0.001);
+    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
+      if(this.solidAt(x,y)) return [x,y];
+    }
+    return null;
+  },
+
+  update(dt){
+    if(!this.L || this.done) return;
+    Clock.adv(0);
+    this.t+=dt;
+    const p=this.p, L=this.L;
+
+    // ---- 입력 → 가속
+    const want=(K.right?1:0)-(K.left?1:0);
+    // 웅크리기: 머리 위가 막혀 있으면 일어서지 않는다 (낮은 통로에 끼는 것 방지)
+    const wantCrouch = K.down && p.onG && !p.climb;
+    if(p.crouch && !wantCrouch && this.hitBox(p.x, p.y, p.w, 1.62)) p.crouch=true;
+    else p.crouch=wantCrouch;
+    const maxs = p.crouch ? RUN*0.5 : RUN;
+    if(want){ p.vx += want*ACC*dt; p.face=want; }
+    else { const s=Math.sign(p.vx); p.vx -= s*Math.min(Math.abs(p.vx), FRIC*dt); }
+    p.vx=clamp(p.vx, -maxs, maxs);
+    p.h = p.crouch ? 1.0 : 1.62;
+
+    // ---- 사다리
+    const onLadder = this.at(Math.floor(p.x), Math.floor(p.y-0.5))==='L' ||
+                     this.at(Math.floor(p.x), Math.floor(p.y-1.2))==='L';
+    if(onLadder && (K.up||K.down)) p.climb=true;
+    if(!onLadder) p.climb=false;
+
+    // ---- 점프
+    const D=this.D, JUMP=D.jump;
+    this.inv=Math.max(0, this.inv-dt);
+    this.jumpBuf = K.jump ? D.buf : Math.max(0, this.jumpBuf-dt);
+    this.coyote = p.onG ? D.coyote : Math.max(0, this.coyote-dt);
+    if(this.jumpBuf>0 && (this.coyote>0 || p.climb)){
+      p.vy=-JUMP; p.onG=false; p.climb=false;
+      this.jumpBuf=0; this.coyote=0; this.held=true;
+      buzz(10); this.dust(p.x, p.y, 5);
+    }
+    if(!K.jump) this.held=false;
+    if(!this.held && p.vy<-JUMP*0.5) p.vy=-JUMP*0.5;   // 짧게 누르면 낮게 (가변 점프)
+
+    // ---- 중력 / 등반
+    if(p.climb){
+      p.vy = (K.up?-5.4:0) + (K.down?5.4:0);
+      p.vx *= 0.7;
+    }else{
+      p.vy = Math.min(MAXFALL, p.vy + GRAV*dt);
+    }
+
+    // ---- X 이동
+    let nx=p.x + p.vx*dt;
+    const hx=this.hitBox(nx, p.y, p.w, p.h);
+    if(hx){
+      if(this.at(hx[0],hx[1])==='D' && this.keys>0){         // 문은 달려들면 열린다
+        this.openDoor(hx[0],hx[1]);
+      }else{
+        nx = p.vx>0 ? hx[0]-p.w/2-0.001 : hx[0]+1+p.w/2+0.001;
+        p.vx=0;
+      }
+    }
+    p.x=clamp(nx, 0.5, L.w-0.5);
+
+    // ---- Y 이동
+    let ny=p.y + p.vy*dt;
+    p.onG=false;
+    const hy=this.hitBox(p.x, ny, p.w, p.h);
+    if(hy){
+      if(this.at(hy[0],hy[1])==='D' && this.keys>0) this.openDoor(hy[0],hy[1]);
+      else if(p.vy>0){ ny=hy[1]; p.onG=true; if(p.vy>13){ this.dust(p.x,ny,7); p.land=0.16; buzz(8);} p.vy=0; }
+      else { ny=hy[1]+1+p.h+0.001; p.vy=0; }
+    }
+    // 한 방향 발판
+    if(p.vy>0 && !p.climb){
+      const feetY=Math.floor(ny), prevY=Math.floor(p.y);
+      for(let x=Math.floor(p.x-p.w/2); x<=Math.floor(p.x+p.w/2); x++){
+        if(this.at(x,feetY)==='=' && prevY<feetY){ ny=feetY; p.vy=0; p.onG=true; if(p.land<=0){this.dust(p.x,ny,4);} break; }
+      }
+    }
+    p.y=ny;
+    p.anim += Math.abs(p.vx)*dt*2.4;
+    p.land=Math.max(0,p.land-dt);
+
+    // ---- 낙사
+    if(p.y>H+1.5){ this.caught('추락'); return; }
+
+    // ---- 타일 상호작용: 몸이 겹치는 모든 타일을 본다
+    //     (한두 점만 검사하면 문 위로 뛰어넘을 때 출구를 못 밟는 문제가 생긴다)
+    const bx0=Math.floor(p.x-p.w/2), bx1=Math.floor(p.x+p.w/2);
+    const by0=Math.floor(p.y-p.h),   by1=Math.floor(p.y-0.001);
+    for(let y=by0;y<=by1;y++) for(let x=bx0;x<=bx1;x++){
+      const c=this.at(x,y);
+      if(c==='K'){ L.grid[y][x]='.'; this.keys++; buzz([20,30,20]); this.hint('열쇠 획득 — 철문으로'); }
+      else if(c==='^'){ this.caught('철조망'); return; }
+      else if(c==='E'){ this.clear(); return; }
+    }
+    if(p.onG && this.at(Math.floor(p.x), Math.floor(p.y))==='^'){ this.caught('철조망'); return; }
+
+    // ---- 간수
+    for(const q of this.guards){
+      const seen=this.sees(q);
+      if(seen) q.alert=2.2;
+      else q.alert=Math.max(0,q.alert-dt);
+      const sp = q.alert>0 ? q.sp*D.chase : q.sp;
+      if(q.alert>0){
+        q.dir = Math.sign(p.x-q.x)||q.dir;
+        q.x += q.dir*sp*dt;                       // 추격 (구역 밖으로도 쫓아온다)
+        q.x = clamp(q.x, q.x0-4, q.x1+4);
+      }else{
+        q.x += q.dir*sp*dt;
+        if(q.x<q.x0){ q.x=q.x0; q.dir=1; }
+        if(q.x>q.x1){ q.x=q.x1; q.dir=-1; }
+      }
+      if(this.inv<=0 && Math.abs(q.x-p.x)<0.75 && Math.abs(q.y-p.y)<1.5){ this.caught('붙잡혔다'); return; }
+    }
+
+    // ---- 서치라이트: 닿는 즉시가 아니라 잠시 버틸 시간을 준다
+    let inLight=false;
+    for(const l of this.lights){
+      l.x += l.dir*l.sp*dt;
+      if(l.x<l.x0){ l.x=l.x0; l.dir=1; }
+      if(l.x>l.x1){ l.x=l.x1; l.dir=-1; }
+      const dx=p.x-l.x, dy=(p.y-0.8)-l.y;
+      if(dx*dx/(l.r*l.r) + dy*dy/(3.2*3.2) < 1) inLight=true;
+    }
+    if(inLight && this.inv<=0){
+      this.lit += dt;
+      this.flash=Math.max(this.flash, 0.25);
+      if(this.lit>D.grace){ this.caught('서치라이트'); return; }
+    }else this.lit=Math.max(0, this.lit-dt*1.5);
+
+    // ---- 체크포인트
+    for(const c2 of this.L.checks){
+      if(Math.abs(p.x-c2[0])<0.8 && Math.abs(p.y-c2[1])<1.2 &&
+         (this.spawn[0]!==c2[0]||this.spawn[1]!==c2[1])){
+        this.spawn=c2.slice(); this.hint('중간 지점 통과');
+      }
+    }
+
+    // ---- 카메라 / 이펙트
+    this.camx += ((p.x-this.vw/this.cell/2) - this.camx) * Math.min(1, dt*7);
+    this.camx = clamp(this.camx, 0, Math.max(0, L.w - this.vw/this.cell));
+    const viewY=this.vh/this.cell;
+    this.camy = viewY>=H ? -(viewY-H)/2                       // 층 전체가 들어오면 세로 중앙 정렬
+                         : clamp(p.y-viewY*0.55, 0, H-viewY); // 아니면 캐릭터를 따라간다
+    this.shake=Math.max(0,this.shake-dt*3);
+    this.flash=Math.max(0,this.flash-dt*2.2);
+    this.parts=this.parts.filter(q=>{ q.t-=dt; q.x+=q.vx*dt; q.y+=q.vy*dt; q.vy+=28*dt; return q.t>0; });
+
+    this.hudUpdate();
+    this.draw();
+  },
+
+  openDoor(x,y){
+    // 같은 열의 D 전체를 연다
+    for(let yy=0;yy<H;yy++) if(this.L.grid[yy][x]==='D') this.L.grid[yy][x]='.';
+    this.keys--; buzz([30,40,30]); this.hint('철문 개방');
+  },
+
+  /* 간수 시야: 바라보는 방향 직선, 벽에 막힌다 */
+  sees(q){
+    const p=this.p;
+    if(Math.abs(p.y-q.y)>1.6) return false;              // 층이 다르면 못 본다
+    const dx=p.x-q.x;
+    if(Math.sign(dx)!==q.dir || Math.abs(dx)>q.look) return false;
+    if(p.crouch && Math.abs(dx)>q.look*0.55) return false; // 웅크리면 멀리서는 안 보인다
+    const step=Math.sign(dx);
+    for(let x=Math.floor(q.x)+step; x!==Math.floor(p.x); x+=step){
+      if(this.solidAt(x, Math.floor(q.y-0.5))) return false;
+    }
+    return true;
+  },
+
+  dust(x,y,n){
+    for(let i=0;i<n;i++) this.parts.push({x, y, vx:(Math.random()-0.5)*4, vy:-Math.random()*4, t:0.35+Math.random()*0.2});
+  },
+
+  caught(why){
+    if(this.done) return;
+    this.dead++; this.totalDead++;
+    this.shake=1; this.flash=1;
+    buzz([70,50,70]);
+    this.hint(why+' — 중간 지점에서 다시');
+    this.respawn();
+    this.hudUpdate();
+  },
+
+  clear(){
+    this.done=true;
+    this.totalTime+=this.t;
+    buzz([25,40,25,40,110]);
+    const last=this.lv+1>=LEVELS.length;
+    $('#ovc-h').textContent = last ? '담장을 넘었다' : this.L.name+' 돌파';
+    $('#ovc-p').textContent = Math.round(this.t)+'초 · 체포 '+this.dead+'회';
+    $('#btn-next').textContent = last ? '결과 보기' : '다음 구역';
+    $('#ov-clear').classList.add('show');
+  },
+
+  next(){
+    if(this.lv+1>=LEVELS.length){ this.ending(); return; }
+    this.load(this.lv+1);
+  },
+
+  ending(){
+    const t=Math.round(this.totalTime), d=this.totalDead;
+    const grade = d===0 ? 'S · 무결점' : d<=3 ? 'A · 능숙' : d<=8 ? 'B · 거칠게' : 'C · 몸으로';
+    $('#e-p').innerHTML='다섯 구역, '+t+'초. 담장을 넘어 숲을 내려가자 국도변에 <b>시동이 걸린 채 서 있는 차</b> 한 대.<br>'+
+                        '등 뒤에서 사이렌이 울린다. 이번엔 발이 아니라 <b>바퀴</b>로 도망칠 차례다.';
+    $('#e-t').innerHTML=
+      '<div class="tr">총 시간<b>'+t+'초</b></div>'+
+      '<div class="tr">체포<b>'+d+'회</b></div>'+
+      '<div class="tr">난이도<b>'+this.D.name+'</b></div>'+
+      '<div class="tr">등급<b>'+grade+'</b></div>';
+
+    /* ---- 2부(도로 추격)로 넘길 인계 기록 ---- */
+    const c = Handoff.build(t, d, grade, this.D.name);
+    Handoff.save(c);
+    $('#e-carry').innerHTML=
+      '<div class="tr" style="opacity:.65">2부로 인계<b>—</b></div>'+
+      '<div class="tr">추격까지 여유<b>'+c.copDelay+'초</b></div>'+
+      '<div class="tr">연막탄 / 부스터<b>'+c.smoke+'개 / '+c.boost+'%</b></div>'+
+      '<div class="tr">탈옥 보너스<b>+'+c.bonus.toLocaleString()+'</b></div>'+
+      (c.startCapture ? '<div class="tr" style="color:#ff8080">수배 확산<b>체포 게이지 '+c.startCapture+'%로 시작</b></div>' : '');
+    this.screen('sc-end');
+  },
+
+  hudUpdate(){
+    $('#h-right').innerHTML='<span class="k">열쇠 '+this.keys+'</span> · 체포 '+this.dead+
+                            '<br>'+Math.round(this.t)+'초';
+  },
+
+  /* ================= 렌더 ================= */
+  draw(){
+    const g=this.g, C=this.cell, L=this.L;
+    const sx=(this.shake>0? (Math.random()-0.5)*this.shake*7 : 0);
+    const sy=(this.shake>0? (Math.random()-0.5)*this.shake*7 : 0);
+    const X=x=>(x-this.camx)*C+sx, Y=y=>(y-this.camy)*C+sy;
+
+    g.clearRect(0,0,this.vw,this.vh);
+    const bg=g.createLinearGradient(0,0,0,this.vh);
+    bg.addColorStop(0,'#141b25'); bg.addColorStop(1,'#0a0d12');
+    g.fillStyle=bg; g.fillRect(0,0,this.vw,this.vh);
+
+    // 배경 창살 실루엣
+    g.strokeStyle='rgba(80,100,120,.10)'; g.lineWidth=3;
+    for(let i=0;i<40;i++){ const x=X(i*2.5 - (this.camx*0.25));
+      if(x<-10||x>this.vw+10) continue;
+      g.beginPath(); g.moveTo(x,0); g.lineTo(x,this.vh); g.stroke(); }
+
+    // 서치라이트 (바닥 빛)
+    for(const l of this.lights){
+      const gx=X(l.x), gy=Y(l.y+0.5);
+      const rg=g.createRadialGradient(gx,gy,0,gx,gy,l.r*C*1.6);
+      rg.addColorStop(0,'rgba(255,232,170,.42)'); rg.addColorStop(1,'rgba(255,232,170,0)');
+      g.fillStyle=rg; g.beginPath(); g.ellipse(gx,gy,l.r*C*1.6,3.2*C,0,0,7); g.fill();
+    }
+
+    // 타일
+    const x0=Math.max(0,Math.floor(this.camx)-1), x1=Math.min(L.w-1, Math.ceil(this.camx+this.vw/C)+1);
+    for(let y=0;y<H;y++) for(let x=x0;x<=x1;x++){
+      const c=L.grid[y][x]; if(c==='.') continue;
+      const px=X(x), py=Y(y), s=C+1;
+      if(c==='#'){
+        g.fillStyle='#232c38'; g.fillRect(px,py,s,s);
+        g.fillStyle='rgba(255,255,255,.045)'; g.fillRect(px,py,s,2);
+        g.strokeStyle='rgba(0,0,0,.35)'; g.lineWidth=1; g.strokeRect(px+.5,py+.5,s-1,s-1);
+      }
+      else if(c==='='){ g.fillStyle='#3a4655'; g.fillRect(px,py,s,C*0.28);
+                        g.fillStyle='rgba(255,255,255,.06)'; g.fillRect(px,py,s,2); }
+      else if(c==='L'){ g.strokeStyle='#7d8ea0'; g.lineWidth=2;
+        g.beginPath(); g.moveTo(px+C*0.28,py); g.lineTo(px+C*0.28,py+C);
+        g.moveTo(px+C*0.72,py); g.lineTo(px+C*0.72,py+C); g.stroke();
+        for(let k=0;k<3;k++){ const yy=py+C*(0.2+k*0.3);
+          g.beginPath(); g.moveTo(px+C*0.28,yy); g.lineTo(px+C*0.72,yy); g.stroke(); } }
+      else if(c==='^'){ g.strokeStyle='#8fa0b2'; g.lineWidth=2;
+        g.beginPath(); g.moveTo(px,py+C); g.lineTo(px+C*0.5,py+C*0.35); g.lineTo(px+C,py+C); g.stroke();
+        g.strokeStyle='rgba(255,66,87,.5)'; g.beginPath(); g.moveTo(px+C*0.2,py+C*0.6); g.lineTo(px+C*0.8,py+C*0.6); g.stroke(); }
+      else if(c==='D'){ g.fillStyle='#4a3a24'; g.fillRect(px,py,s,s);
+        g.strokeStyle='#8a6a3a'; g.lineWidth=2; g.strokeRect(px+2.5,py+2.5,s-5,s-5);
+        g.fillStyle='#c9a25a'; g.beginPath(); g.arc(px+C*0.72,py+C*0.5,C*0.07,0,7); g.fill(); }
+      else if(c==='K'){ g.strokeStyle='#ffd9a0'; g.lineWidth=2.4;
+        g.beginPath(); g.arc(px+C*0.38,py+C*0.5,C*0.16,0,7); g.stroke();
+        g.beginPath(); g.moveTo(px+C*0.52,py+C*0.5); g.lineTo(px+C*0.82,py+C*0.5);
+        g.moveTo(px+C*0.72,py+C*0.5); g.lineTo(px+C*0.72,py+C*0.66); g.stroke(); }
+      else if(c==='E'){ g.fillStyle='rgba(91,224,138,.16)'; g.fillRect(px,py-C,s,C*2);
+        g.strokeStyle='#5be08a'; g.lineWidth=2; g.strokeRect(px+2,py-C+2,s-4,C*2-4);
+        g.fillStyle='#5be08a'; g.font='700 '+(C*0.42)+'px sans-serif'; g.textAlign='center';
+        g.fillText('EXIT', px+C/2, py+C*0.62); }
+    }
+
+    // 먼지
+    g.fillStyle='rgba(200,215,230,.5)';
+    this.parts.forEach(q=>{ const r=Math.max(1,C*0.06*q.t*3); g.beginPath(); g.arc(X(q.x),Y(q.y),r,0,7); g.fill(); });
+
+    // 간수
+    for(const q of this.guards) this.drawGuard(X,Y,C,q);
+    // 나
+    this.drawMe(X,Y,C);
+
+    // 조명 비네트
+    const vg=g.createRadialGradient(this.vw/2,this.vh/2,this.vh*0.25,this.vw/2,this.vh/2,this.vh*0.95);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.55)');
+    g.fillStyle=vg; g.fillRect(0,0,this.vw,this.vh);
+    if(this.flash>0){ g.fillStyle='rgba(255,66,87,'+(this.flash*0.35)+')'; g.fillRect(0,0,this.vw,this.vh); }
+  },
+
+  drawGuard(X,Y,C,q){
+    const g=this.g, px=X(q.x), py=Y(q.y);
+    // 손전등 원뿔
+    const len=q.look*C, spread=C*1.1;
+    const grad=g.createLinearGradient(px,py,px+q.dir*len,py);
+    const hot = q.alert>0;
+    grad.addColorStop(0, hot?'rgba(255,120,120,.34)':'rgba(255,226,160,.26)');
+    grad.addColorStop(1,'rgba(255,226,160,0)');
+    g.fillStyle=grad;
+    g.beginPath();
+    g.moveTo(px, py-C*0.8);
+    g.lineTo(px+q.dir*len, py-C*0.8-spread);
+    g.lineTo(px+q.dir*len, py-C*0.8+spread);
+    g.closePath(); g.fill();
+    // 몸
+    const bw=C*0.62, bh=C*1.5;
+    g.fillStyle=hot?'#5a2530':'#26313f';
+    g.fillRect(px-bw/2, py-bh, bw, bh*0.66);
+    g.fillStyle='#1b2430'; g.fillRect(px-bw/2, py-bh*0.34, bw, bh*0.34);
+    g.fillStyle='#d8c39a'; g.beginPath(); g.arc(px, py-bh-C*0.14, C*0.24, 0, 7); g.fill();
+    g.fillStyle=hot?'#ff4257':'#3d4c5e';                       // 모자
+    g.fillRect(px-C*0.28, py-bh-C*0.42, C*0.56, C*0.18);
+    g.fillRect(px+(q.dir>0?C*0.16:-C*0.44), py-bh-C*0.3, C*0.28, C*0.08);
+  },
+
+  drawMe(X,Y,C){
+    const g=this.g, p=this.p, px=X(p.x), py=Y(p.y);
+    // 무적 동안 깜빡임
+    g.save();
+    if(this.inv>0) g.globalAlpha = 0.35+0.65*Math.abs(Math.sin(this.inv*22));
+    const run=Math.abs(p.vx)>0.6 && p.onG;
+    const ph=Math.sin(p.anim*3.1);
+    const sq = p.land>0 ? 1+p.land*0.9 : 1;
+    const bh = (p.crouch? C*0.95 : C*1.5)/sq, bw=(C*0.6)*sq;
+
+    // 다리
+    g.strokeStyle='#20262e'; g.lineWidth=Math.max(2,C*0.11); g.lineCap='round';
+    const legY=py, hipY=py-bh*0.42;
+    if(!p.onG){
+      g.beginPath(); g.moveTo(px-C*0.05,hipY); g.lineTo(px-C*0.22*p.face, legY-C*0.22);
+      g.moveTo(px+C*0.05,hipY); g.lineTo(px+C*0.16*p.face, legY-C*0.05); g.stroke();
+    }else if(run){
+      g.beginPath(); g.moveTo(px,hipY); g.lineTo(px+ph*C*0.3, legY);
+      g.moveTo(px,hipY); g.lineTo(px-ph*C*0.3, legY); g.stroke();
+    }else{
+      g.beginPath(); g.moveTo(px-C*0.1,hipY); g.lineTo(px-C*0.1,legY);
+      g.moveTo(px+C*0.1,hipY); g.lineTo(px+C*0.1,legY); g.stroke();
+    }
+    // 몸통 (죄수복 줄무늬)
+    g.fillStyle='#f0e2c8'; g.fillRect(px-bw/2, py-bh, bw, bh*0.62);
+    g.fillStyle='#c9723a';
+    for(let i=0;i<4;i++) g.fillRect(px-bw/2, py-bh+bh*0.09*(i*1.6+0.4), bw, bh*0.075);
+    // 팔
+    g.strokeStyle='#e6d6bb'; g.lineWidth=Math.max(2,C*0.1);
+    const shY=py-bh*0.86;
+    if(p.climb){ g.beginPath(); g.moveTo(px,shY); g.lineTo(px-C*0.05, shY-C*0.4);
+                 g.moveTo(px,shY); g.lineTo(px+C*0.05, shY-C*0.4); g.stroke(); }
+    else if(!p.onG){ g.beginPath(); g.moveTo(px,shY); g.lineTo(px+p.face*C*0.3, shY-C*0.22); g.stroke(); }
+    else { g.beginPath(); g.moveTo(px,shY); g.lineTo(px-ph*C*0.26, shY+C*0.3); g.stroke(); }
+    // 머리
+    g.fillStyle='#f4dcb6'; g.beginPath(); g.arc(px, py-bh-C*0.12, C*0.23, 0, 7); g.fill();
+    g.fillStyle='#2a2118'; g.fillRect(px+p.face*C*0.08, py-bh-C*0.17, C*0.07, C*0.06);
+    // 웅크림 표시
+    if(p.crouch){ g.strokeStyle='rgba(87,216,255,.5)'; g.lineWidth=1.5;
+      g.beginPath(); g.arc(px, py-bh*0.5, C*0.55, 0, 7); g.stroke(); }
+    g.restore();
+    // 서치라이트 노출 경고 게이지
+    if(this.lit>0){
+      const w=C*0.9, ratio=Math.min(1, this.lit/this.D.grace);
+      g.fillStyle='rgba(0,0,0,.5)'; g.fillRect(px-w/2, py-bh-C*0.6, w, C*0.12);
+      g.fillStyle= ratio>0.6?'#ff4257':'#ffd9a0';
+      g.fillRect(px-w/2, py-bh-C*0.6, w*ratio, C*0.12);
+    }
+  }
+};
+
+/* ---- 루프 ---- */
+let last=0;
+function frame(t){
+  const dt=last?Math.min(0.033,(t-last)/1000):0; last=t;
+  if($('#sc-play').classList.contains('show')) G.update(dt);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---- 입력 ---- */
+G.init();
+document.querySelectorAll('.pad button[data-k]').forEach(b=>{
+  const k=b.dataset.k;
+  const on=e=>{ e.preventDefault(); K[k]=true; };
+  const off=e=>{ e.preventDefault(); K[k]=false; };
+  b.addEventListener('pointerdown',on);
+  b.addEventListener('pointerup',off);
+  b.addEventListener('pointercancel',off);
+  b.addEventListener('pointerleave',off);
+});
+const KMAP={arrowleft:'left',a:'left',arrowright:'right',d:'right',arrowup:'up',w:'up',
+            arrowdown:'down',s:'down',' ':'jump',z:'jump',x:'jump'};
+addEventListener('keydown',e=>{ const k=KMAP[e.key.toLowerCase()]; if(k){ e.preventDefault(); K[k]=true; } });
+addEventListener('keyup',  e=>{ const k=KMAP[e.key.toLowerCase()]; if(k){ e.preventDefault(); K[k]=false; } });
+
+$('#diff-opts').addEventListener('click', e=>{
+  const b=e.target.closest('.opt'); if(!b) return;
+  G.diff=b.dataset.d; G.D=DIFF[G.diff];
+  document.querySelectorAll('#diff-opts .opt').forEach(o=>o.classList.toggle('on', o===b));
+});
+$('#btn-start').onclick=()=>G.begin();
+$('#btn-keys').onclick=()=>alert('←→ 이동 · 스페이스/Z 점프(길게 누르면 높이) · ↓ 웅크리기 · ↑ 사다리');
+$('#btn-next').onclick=()=>G.next();
+$('#btn-again').onclick=()=>G.screen('sc-title');
+$('#btn-drive').onclick=()=>{ location.href='chase.html?from=prison'; };
+$('#btn-hub').onclick=()=>{ location.href='index.html'; };
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('dblclick',e=>e.preventDefault());
+</script>
+</body>
+</html>

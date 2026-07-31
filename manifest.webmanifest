@@ -1,7 +1,7 @@
 {
-  "name": "경찰 추격 탈출",
-  "short_name": "추격탈출",
-  "description": "도로에서 순찰차를 피해 도주하는 모바일 웹 게임. 기울기 조향·진동·흔들기 연막 지원.",
+  "name": "ESCAPE 7 — 담장을 넘어, 도로 위로",
+  "short_name": "ESCAPE 7",
+  "description": "감옥 탈출 액션에서 시작해 도로 위 경찰 추격전으로 이어지는 2부작 모바일 웹 게임. 1부 성적이 2부 도주 조건으로 인계된다.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

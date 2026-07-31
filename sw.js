@@ -1,6 +1,7 @@
 /* 경찰 추격 탈출 — 오프라인 캐시 서비스워커 */
-const CACHE = 'pce-v1';
-const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'escape7-v2';
+const ASSETS = ['./', './index.html', './prison.html', './chase.html',
+                './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

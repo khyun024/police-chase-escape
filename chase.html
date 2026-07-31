@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>ESCAPE 7 · 2부 — 경찰 추격 탈출</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0e14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="경찰 추격 탈출">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<style>
+  :root{
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-l: env(safe-area-inset-left, 0px);
+    --safe-r: env(safe-area-inset-right, 0px);
+    --red:#ff3b4e; --blue:#3b8cff; --amber:#ffc23b; --ink:#0b0e14;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    color:#eef2f8; overscroll-behavior:none; touch-action:none; user-select:none; -webkit-user-select:none}
+  #wrap{position:fixed; inset:0; overflow:hidden}
+  canvas{position:absolute; inset:0; width:100%; height:100%; display:block}
+
+  /* ---------- 화면 위 컨트롤 ---------- */
+  .pad{position:absolute; bottom:calc(18px + var(--safe-b)); width:88px; height:88px; border-radius:50%;
+    display:grid; place-items:center; text-align:center; line-height:1.05; font-weight:800; font-size:13px;
+    background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.22);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); z-index:5;
+    transition:transform .07s ease, background .12s ease; letter-spacing:-.3px}
+  .pad small{display:block;font-size:10px;opacity:.6;font-weight:600;margin-top:2px}
+  .pad:active,.pad.on{transform:scale(.93)}
+  #boost{right:calc(16px + var(--safe-r)); border-color:rgba(59,140,255,.5); color:#cfe4ff;
+    background:radial-gradient(circle at 50% 120%, rgba(59,140,255,.45), rgba(59,140,255,.08))}
+  #boost.on{background:radial-gradient(circle at 50% 120%, rgba(59,140,255,.85), rgba(59,140,255,.3))}
+  #smoke{left:calc(16px + var(--safe-l)); border-color:rgba(255,194,59,.45); color:#ffe6b0;
+    background:radial-gradient(circle at 50% 120%, rgba(255,194,59,.3), rgba(255,194,59,.06))}
+  .pad.dim{opacity:.32}
+  #pauseBtn{position:absolute; top:calc(10px + var(--safe-t)); right:calc(12px + var(--safe-r));
+    width:44px;height:44px;border-radius:14px;display:grid;place-items:center;z-index:5;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);font-size:16px}
+  .hide{display:none !important}
+
+  /* ---------- 오버레이 ---------- */
+  .sheet{position:absolute; inset:0; z-index:20; display:flex; flex-direction:column; justify-content:center;
+    align-items:center; gap:14px; padding:calc(22px + var(--safe-t)) 22px calc(22px + var(--safe-b));
+    background:radial-gradient(120% 80% at 50% 0%, rgba(59,140,255,.16), transparent 60%), rgba(6,8,12,.90);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); overflow-y:auto; text-align:center}
+  h1{margin:0; font-size:30px; letter-spacing:-1px; line-height:1.1}
+  h1 span{background:linear-gradient(90deg,var(--red),var(--blue)); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .sub{margin:0; font-size:13px; opacity:.62; line-height:1.6; max-width:330px}
+  .btn{appearance:none; border:0; border-radius:16px; padding:15px 30px; font-size:17px; font-weight:800;
+    color:#fff; background:linear-gradient(135deg,#ff3b4e,#ff7a3b); box-shadow:0 10px 26px rgba(255,59,78,.32);
+    font-family:inherit; letter-spacing:-.3px}
+  .btn:active{transform:scale(.97)}
+  .btn.ghost{background:rgba(255,255,255,.08); box-shadow:none; border:1px solid rgba(255,255,255,.18); font-size:14px; padding:12px 20px}
+  .row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+
+  .card{width:100%; max-width:340px; border-radius:16px; padding:12px 14px;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09); text-align:left}
+  .card h3{margin:0 0 8px; font-size:12px; letter-spacing:.8px; text-transform:uppercase; opacity:.5}
+  .feat{display:flex; align-items:center; gap:8px; font-size:12.5px; padding:3.5px 0; line-height:1.35}
+  .feat i{flex:none; width:17px; height:17px; border-radius:50%; display:grid; place-items:center; font-size:10px; font-style:normal}
+  .ok i{background:rgba(60,220,140,.18); color:#4ade9b}
+  .no i{background:rgba(255,255,255,.08); color:#8b93a1}
+  .no{opacity:.5}
+  .feat b{font-weight:700}
+  .feat em{font-style:normal; opacity:.55; font-size:11.5px}
+
+  .scores{display:flex; gap:10px; width:100%; max-width:340px}
+  .score{flex:1; border-radius:16px; padding:12px; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.09)}
+  .score b{display:block; font-size:26px; letter-spacing:-1px; font-variant-numeric:tabular-nums}
+  .score span{font-size:10.5px; opacity:.5; letter-spacing:.5px}
+  .tag{display:inline-block; font-size:11px; font-weight:800; padding:5px 11px; border-radius:99px;
+    background:rgba(255,59,78,.16); color:#ff8592; border:1px solid rgba(255,59,78,.3); letter-spacing:.5px}
+  .toggles{display:flex; flex-direction:column; gap:2px; width:100%; max-width:340px}
+  .tg{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 2px; font-size:13.5px}
+  .tg em{font-style:normal; opacity:.45; font-size:11px; display:block; margin-top:1px}
+  .sw{flex:none; width:46px; height:27px; border-radius:99px; background:rgba(255,255,255,.13); position:relative; transition:background .15s}
+  .sw::after{content:""; position:absolute; top:3px; left:3px; width:21px; height:21px; border-radius:50%;
+    background:#fff; transition:transform .15s ease}
+  .sw.on{background:linear-gradient(90deg,#3b8cff,#4ade9b)}
+  .sw.on::after{transform:translateX(19px)}
+  .sw.off{opacity:.35}
+  #toast{position:absolute; left:50%; bottom:calc(122px + var(--safe-b)); transform:translateX(-50%);
+    z-index:9; font-size:13px; font-weight:700; padding:9px 16px; border-radius:99px; white-space:nowrap;
+    background:rgba(8,10,16,.82); border:1px solid rgba(255,255,255,.14); opacity:0; transition:opacity .2s}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="cv"></canvas>
+
+  <div id="boost" class="pad hide">부스터<small>NOS</small></div>
+  <div id="smoke" class="pad hide">연막<small>흔들기</small></div>
+  <div id="pauseBtn" class="hide">❚❚</div>
+  <div id="toast"></div>
+
+  <!-- 메인 메뉴 -->
+  <div id="menu" class="sheet">
+    <span class="tag">WANTED · LEVEL 1</span>
+    <h1>2부 — 도로 위 <span>경찰 추격 탈출</span></h1>
+    <p class="sub" id="menuLede">차선을 넘나들며 교통 체증을 피하고, 뒤에서 붙는 순찰차를 떼어내라.
+      경찰이 바짝 붙으면 <b>체포 게이지</b>가 차오른다.</p>
+
+    <div class="card" id="carryCard" style="display:none">
+      <h3>1부 탈옥 기록 인계</h3>
+      <div id="carryList"></div>
+    </div>
+
+    <div class="scores">
+      <div class="score"><b id="mBest">0</b><span>최고 점수</span></div>
+      <div class="score"><b id="mDist">0<small style="font-size:12px">m</small></b><span>최장 도주 거리</span></div>
+    </div>
+
+    <div class="card">
+      <h3>이 기기에서 쓸 수 있는 모바일 기능</h3>
+      <div id="featList"></div>
+    </div>
+
+    <div class="toggles card">
+      <h3>설정</h3>
+      <div class="tg" data-k="tilt"><div>기울기 조향 <em>폰을 좌우로 기울여 운전</em></div><div class="sw" id="swTilt"></div></div>
+      <div class="tg" data-k="haptic"><div>진동 햅틱 <em>충돌·아차상황에서 진동</em></div><div class="sw" id="swHaptic"></div></div>
+      <div class="tg" data-k="sound"><div>사운드 <em>엔진음·사이렌</em></div><div class="sw" id="swSound"></div></div>
+      <div class="tg" data-k="shake"><div>흔들어서 연막 <em>폰을 흔들면 연막 살포</em></div><div class="sw" id="swShake"></div></div>
+    </div>
+
+    <button class="btn" id="startBtn">추격 시작</button>
+    <p class="sub" style="font-size:11.5px">화면을 좌우로 <b>드래그</b>해도 조향된다 · 5차선 도로 · 순찰차는 <b>뒤에서만</b> 붙는다<br>
+      PC: ← → 조향 · Space 부스터 · <b>S 또는 X 연막</b> · P 일시정지</p>
+  </div>
+
+  <!-- 일시정지 -->
+  <div id="pause" class="sheet hide">
+    <h1>일시 정지</h1>
+    <p class="sub">기울기 조향을 쓰는 중이라면, 지금 잡고 있는 각도가 <b>중립</b>으로 다시 맞춰진다.</p>
+    <div class="row">
+      <button class="btn" id="resumeBtn">계속하기</button>
+      <button class="btn ghost" id="quitBtn">그만두기</button>
+    </div>
+  </div>
+
+  <!-- 게임 오버 -->
+  <div id="over" class="sheet hide">
+    <span class="tag" id="overTag">BUSTED</span>
+    <h1 id="overTitle">검거되었다</h1>
+    <div class="scores">
+      <div class="score"><b id="oScore">0</b><span>점수</span></div>
+      <div class="score"><b id="oBest">0</b><span>최고 점수</span></div>
+    </div>
+    <div class="card" id="statCard"></div>
+    <div class="row">
+      <button class="btn" id="retryBtn">다시 도주</button>
+      <button class="btn ghost" id="menuBtn">메뉴로</button>
+      <button class="btn ghost" id="prisonBtn">1부부터 다시</button>
+      <button class="btn ghost" id="hubBtn">타이틀로</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================================
+   경찰 추격 탈출 — 모바일 웹 게임 (단일 파일)
+   사용 중인 모바일 기능:
+     · DeviceOrientation  → 기울기 조향
+     · DeviceMotion       → 흔들기 감지(연막)
+     · Vibration API      → 충돌/아차 상황 햅틱
+     · Fullscreen + Screen Orientation Lock
+     · Screen Wake Lock   → 플레이 중 화면 꺼짐 방지
+     · Web Audio API      → 엔진음/사이렌 실시간 합성
+     · Pointer(터치) 드래그 조향, visibilitychange 자동 일시정지
+     · localStorage 기록 저장, PWA(manifest + service worker) 오프라인 설치
+   ========================================================================= */
+
+const $ = s => document.querySelector(s);
+const clamp = (v,a,b) => v<a?a:v>b?b:v;
+const lerp  = (a,b,t) => a+(b-a)*t;
+const rand  = (a,b) => a+Math.random()*(b-a);
+const pick  = a => a[(Math.random()*a.length)|0];
+
+/* ---------------------------------------------------------------- 캔버스 */
+const cv = $('#cv'), ctx = cv.getContext('2d', { alpha:false });
+let W = 0, H = 0, DPR = 1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = wrapEl.clientWidth; H = wrapEl.clientHeight;
+  cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  road.w = Math.min(W*0.92, H*0.86);   // 5차선 — 좌우 회피 공간 확보
+  road.x = (W - road.w)/2;
+  road.lane = road.w / LANES;
+  car.w = Math.min(road.lane*0.66, W*0.13); car.h = car.w*2.0;
+  car.y = H*0.72;
+  if(player && state === 'menu') player.x = W/2;
+}
+const wrapEl = $('#wrap');
+addEventListener('resize', resize);
+addEventListener('orientationchange', () => setTimeout(resize, 250));
+
+/* ---------------------------------------------------------------- 상태 */
+const LANES = 5;
+const road = { x:0, w:0, lane:0 };
+const car  = { w:0, h:0, y:0 };
+
+let state = 'menu';              // menu | playing | pause | over
+let player, cops, traffic, items, hazards, parts;
+let dist, score, combo, comboT, heat, capture, shakeAmt, scrollY, flash;
+let boostFuel, boostOn, smokeStock, smokeT, blowoutT, crashT, stats;
+let lastT = 0, rafId = 0;
+
+const store = {
+  get best(){ return +(localStorage.getItem('pce.best')||0); },
+  set best(v){ localStorage.setItem('pce.best', v|0); },
+  get dist(){ return +(localStorage.getItem('pce.dist')||0); },
+  set dist(v){ localStorage.setItem('pce.dist', v|0); },
+  get opt(){ try{ return JSON.parse(localStorage.getItem('pce.opt')) || {}; }catch(e){ return {}; } },
+  set opt(v){ localStorage.setItem('pce.opt', JSON.stringify(v)); }
+};
+
+/* ---------------------------------------------------------------- 1부 인계 기록
+   prison.html(1부)이 남긴 성적을 읽어 도주 시작 조건에 반영한다.
+   단독으로 열었을 때는 인계 없이 기본 조건으로 시작한다. */
+const Carry = (() => {
+  if(/(\?|&)solo=1/.test(location.search)) return null;   // 허브의 "2부만 플레이" — 인계 무시
+  let c = null;
+  try{ c = JSON.parse(localStorage.getItem('escape7.handoff')); }catch(e){ c = null; }
+  const fromPrison = /(\?|&)from=prison/.test(location.search);
+  // 1부에서 바로 넘어온 경우이거나, 2시간 안에 남긴 기록이면 인계한다
+  if(c && !fromPrison && (!c.ts || Date.now() - c.ts > 2*60*60*1000)) c = null;
+  return c;
+})();
+
+function renderCarry(){
+  if(!Carry) return;
+  const card = $('#carryCard'), list = $('#carryList');
+  card.style.display = '';
+  // 1부에서 이어진 상황을 문장으로 이어 붙인다
+  $('#menuLede').innerHTML = Carry.startCapture
+    ? '담장을 넘느라 소란이 컸다. 무전은 이미 돌았고, 갓길의 차에 올라타는 순간 <b>사이렌이 붙는다.</b> 국도 끝까지 버텨라.'
+    : '숲을 내려와 갓길의 차에 올라탔다. 아직 무전은 조용하다 — <b>' + Carry.copDelay + '초</b> 뒤면 그것도 끝난다. 국도 끝까지 달려라.';
+  const rows = [
+    ['1부 등급', Carry.grade + (Carry.diff ? ' · ' + Carry.diff : '')],
+    ['탈옥 시간 / 체포', Carry.time + '초 / ' + Carry.deaths + '회'],
+    ['추격까지 여유', Carry.copDelay + '초'],
+    ['연막탄 / 부스터', Carry.smoke + '개 / ' + Carry.boost + '%'],
+    ['탈옥 보너스 점수', '+' + Carry.bonus.toLocaleString()],
+  ];
+  if(Carry.startCapture) rows.push(['수배 확산', '체포 게이지 ' + Carry.startCapture + '%로 시작']);
+  list.innerHTML = rows.map(([a,b]) =>
+    `<div class="feat ok" style="justify-content:space-between"><b style="font-weight:600;opacity:.7">${a}</b><em style="opacity:1;font-weight:800">${b}</em></div>`
+  ).join('');
+}
+
+/* ---------------------------------------------------------------- 기기 기능 감지 */
+const feat = {
+  tilt:     'DeviceOrientationEvent' in window,
+  tiltPerm: typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function',
+  motion:   'DeviceMotionEvent' in window,
+  vibrate:  'vibrate' in navigator,
+  fs:       !!(wrapEl.requestFullscreen || wrapEl.webkitRequestFullscreen),
+  wake:     'wakeLock' in navigator,
+  audio:    !!(window.AudioContext || window.webkitAudioContext),
+  orient:   !!(screen.orientation && screen.orientation.lock),
+  sw:       'serviceWorker' in navigator,
+  touch:    matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window
+};
+const opt = Object.assign({ tilt:feat.tilt, haptic:feat.vibrate, sound:true, shake:feat.motion }, store.opt);
+
+function renderFeatures(){
+  const list = [
+    [feat.tilt,    '기울기 조향',      'DeviceOrientation'],
+    [feat.motion,  '흔들기 감지',      'DeviceMotion'],
+    [feat.vibrate, '진동 햅틱',        'Vibration API'],
+    [feat.audio,   '실시간 사운드',     'Web Audio'],
+    [feat.fs,      '전체화면',         'Fullscreen API'],
+    [feat.wake,    '화면 꺼짐 방지',    'Wake Lock'],
+    [feat.orient,  '세로 화면 고정',    'Orientation Lock'],
+    [feat.sw,      '설치 · 오프라인',   'PWA'],
+  ];
+  $('#featList').innerHTML = list.map(([ok,name,api]) =>
+    `<div class="feat ${ok?'ok':'no'}"><i>${ok?'✓':'—'}</i><b>${name}</b><em>${api}</em></div>`
+  ).join('');
+  for(const k of ['tilt','haptic','sound','shake']){
+    const el = $('#sw'+k[0].toUpperCase()+k.slice(1));
+    const supported = k==='tilt'?feat.tilt : k==='haptic'?feat.vibrate : k==='sound'?feat.audio : feat.motion;
+    el.classList.toggle('on', !!opt[k] && supported);
+    el.classList.toggle('off', !supported);
+  }
+}
+document.querySelectorAll('.tg').forEach(tg => tg.addEventListener('click', () => {
+  const k = tg.dataset.k;
+  const supported = k==='tilt'?feat.tilt : k==='haptic'?feat.vibrate : k==='sound'?feat.audio : feat.motion;
+  if(!supported){ toast('이 기기에서는 지원하지 않는다'); return; }
+  opt[k] = !opt[k]; store.opt = opt; renderFeatures();
+  if(k==='tilt' && opt[k]) requestTilt();
+  if(k==='sound') Audio2.mute(!opt.sound);
+  if(k==='haptic' && opt[k]) buzz(20);
+}));
+
+/* ---------------------------------------------------------------- 햅틱 */
+function buzz(p){ if(opt.haptic && feat.vibrate){ try{ navigator.vibrate(p); }catch(e){} } }
+
+/* ---------------------------------------------------------------- 사운드 (Web Audio) */
+const Audio2 = (() => {
+  let ac, master, eng, engF, engG, sirA, sirB, sirG, sirLFO, noiseBuf, ready = false;
+  function init(){
+    if(ready || !feat.audio) return;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    ac = new AC();
+    master = ac.createGain(); master.gain.value = opt.sound ? 0.9 : 0; master.connect(ac.destination);
+
+    // 엔진: 톱니파 + 로우패스
+    eng = ac.createOscillator(); eng.type='sawtooth'; eng.frequency.value=70;
+    engF = ac.createBiquadFilter(); engF.type='lowpass'; engF.frequency.value=520; engF.Q.value=6;
+    engG = ac.createGain(); engG.gain.value=0;
+    eng.connect(engF); engF.connect(engG); engG.connect(master); eng.start();
+
+    // 사이렌: 두 오실레이터를 LFO로 흔들어 요란한 소리
+    sirG = ac.createGain(); sirG.gain.value=0;
+    sirA = ac.createOscillator(); sirA.type='square'; sirA.frequency.value=760;
+    sirB = ac.createOscillator(); sirB.type='square'; sirB.frequency.value=980;
+    sirLFO = ac.createOscillator(); sirLFO.type='sine'; sirLFO.frequency.value=1.6;
+    const lg = ac.createGain(); lg.gain.value=150;
+    sirLFO.connect(lg); lg.connect(sirA.frequency); lg.connect(sirB.frequency);
+    const sf = ac.createBiquadFilter(); sf.type='bandpass'; sf.frequency.value=900; sf.Q.value=1.2;
+    sirA.connect(sf); sirB.connect(sf); sf.connect(sirG); sirG.connect(master);
+    sirA.start(); sirB.start(); sirLFO.start();
+
+    // 화이트 노이즈 버퍼(충돌/스크래치/연막)
+    noiseBuf = ac.createBuffer(1, ac.sampleRate*0.7, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * (1 - i/d.length);
+    ready = true;
+  }
+  const t = () => ac.currentTime;
+  function noise(dur, vol, freq, type='lowpass'){
+    if(!ready) return;
+    const s = ac.createBufferSource(); s.buffer = noiseBuf;
+    const f = ac.createBiquadFilter(); f.type=type; f.frequency.value=freq;
+    const g = ac.createGain(); g.gain.setValueAtTime(vol, t());
+    g.gain.exponentialRampToValueAtTime(0.0001, t()+dur);
+    s.connect(f); f.connect(g); g.connect(master); s.start(); s.stop(t()+dur+0.05);
+  }
+  function blip(f0, f1, dur, vol, type='triangle'){
+    if(!ready) return;
+    const o = ac.createOscillator(); o.type=type; o.frequency.setValueAtTime(f0, t());
+    o.frequency.exponentialRampToValueAtTime(f1, t()+dur);
+    const g = ac.createGain(); g.gain.setValueAtTime(vol, t());
+    g.gain.exponentialRampToValueAtTime(0.0001, t()+dur);
+    o.connect(g); g.connect(master); o.start(); o.stop(t()+dur+0.02);
+  }
+  return {
+    unlock(){ init(); if(ac && ac.state==='suspended') ac.resume(); },
+    mute(m){ if(ready) master.gain.value = m?0:0.9; },
+    suspend(){ if(ac && ac.state==='running') ac.suspend(); },
+    resume(){ if(ac && ac.state==='suspended') ac.resume(); },
+    engine(v, on){ if(!ready) return;
+      engF.frequency.value = 380 + v*0.55;
+      eng.frequency.value  = 56 + v*0.085;
+      engG.gain.value = lerp(engG.gain.value, on?0.055:0.0, 0.2);
+    },
+    siren(level){ if(!ready) return;
+      sirG.gain.value = lerp(sirG.gain.value, clamp(level,0,1)*0.075, 0.15);
+      sirLFO.frequency.value = 1.3 + clamp(level,0,1)*1.6;
+    },
+    crash(){ noise(0.5, 0.55, 1400); blip(180, 60, 0.35, 0.28, 'square'); },
+    scrape(){ noise(0.12, 0.12, 3200, 'highpass'); },
+    near(){ blip(1400, 700, 0.09, 0.10); },
+    nos(){ blip(300, 1500, 0.35, 0.20, 'sawtooth'); noise(0.5, 0.14, 900); },
+    puff(){ noise(0.6, 0.30, 700); },
+    coin(){ blip(700, 1500, 0.12, 0.16); },
+    bust(){ blip(500, 90, 1.0, 0.32, 'square'); noise(0.9, 0.3, 600); },
+    copOut(){ noise(0.45, 0.4, 1100); blip(420, 110, 0.5, 0.22, 'square'); }
+  };
+})();
+
+/* ---------------------------------------------------------------- 입력 */
+const input = { steer:0, drag:null, keyL:false, keyR:false, boost:false };
+let tiltRaw = null, tiltZero = 0, tiltActive = false;
+
+function onOrient(e){
+  if(e.gamma == null) return;
+  tiltActive = true;
+  // 세로 모드 기준 gamma(좌우 기울기). 가로 모드면 beta 사용
+  const landscape = Math.abs(window.orientation||0) === 90 || (screen.orientation && screen.orientation.angle%180 === 90);
+  tiltRaw = landscape ? -(e.beta||0) * Math.sign(screen.orientation ? (screen.orientation.angle===90?1:-1) : 1) : e.gamma;
+}
+function requestTilt(){
+  if(!feat.tilt) return;
+  const attach = () => addEventListener('deviceorientation', onOrient);
+  if(feat.tiltPerm){
+    DeviceOrientationEvent.requestPermission().then(r => {
+      if(r === 'granted'){ attach(); }
+      else { opt.tilt = false; store.opt = opt; renderFeatures(); toast('기울기 권한이 거부되어 드래그로 조향한다'); }
+    }).catch(()=>{});
+  } else attach();
+}
+function calibrateTilt(){ if(tiltRaw != null) tiltZero = tiltRaw; }
+
+/* 흔들기 감지 */
+let shakeCool = 0, lastMag = 0;
+function onMotion(e){
+  const a = e.accelerationIncludingGravity; if(!a) return;
+  const m = Math.hypot(a.x||0, a.y||0, a.z||0);
+  const jerk = Math.abs(m - lastMag); lastMag = m;
+  if(jerk > 12 && shakeCool <= 0 && state === 'playing'){ shakeCool = 1.0; useSmoke(); }
+}
+if(feat.motion) addEventListener('devicemotion', onMotion);
+
+/* 드래그 조향 */
+wrapEl.addEventListener('pointerdown', e => {
+  if(e.target.closest('.pad,.btn,.sheet,#pauseBtn')) return;
+  input.drag = { id:e.pointerId, x:e.clientX, base:player ? player.x : W/2 };
+});
+wrapEl.addEventListener('pointermove', e => {
+  if(input.drag && input.drag.id === e.pointerId) input.drag.x = e.clientX;
+});
+const endDrag = e => { if(input.drag && input.drag.id === e.pointerId) input.drag = null; };
+wrapEl.addEventListener('pointerup', endDrag);
+wrapEl.addEventListener('pointercancel', endDrag);
+
+/* e.code로 판정 — 한글 IME나 다른 자판에서도 동일하게 먹는다 */
+addEventListener('keydown', e => {
+  if(e.repeat && (e.code==='KeyS'||e.code==='KeyX'||e.code==='ShiftLeft')) return;
+  switch(e.code){
+    case 'ArrowLeft': case 'KeyA': input.keyL = true; break;
+    case 'ArrowRight': case 'KeyD': input.keyR = true; break;
+    case 'Space': case 'ArrowUp': case 'KeyW': input.boost = true; e.preventDefault(); break;
+    case 'KeyS': case 'KeyX': case 'ShiftLeft': case 'ArrowDown':   // 연막
+      useSmoke(); e.preventDefault(); break;
+    case 'KeyP': case 'Escape':
+      if(state==='playing') doPause(); else if(state==='pause') doResume(); break;
+    case 'Enter': case 'NumpadEnter':
+      if(state==='menu'||state==='over') startGame(); else if(state==='pause') doResume(); break;
+  }
+});
+addEventListener('keyup', e => {
+  switch(e.code){
+    case 'ArrowLeft': case 'KeyA': input.keyL = false; break;
+    case 'ArrowRight': case 'KeyD': input.keyR = false; break;
+    case 'Space': case 'ArrowUp': case 'KeyW': input.boost = false; break;
+  }
+});
+
+/* 버튼 */
+const boostBtn = $('#boost'), smokeBtn = $('#smoke');
+const hold = (el, on, off) => {
+  el.addEventListener('pointerdown', e => { e.preventDefault(); el.setPointerCapture?.(e.pointerId); on(); });
+  ['pointerup','pointercancel','pointerleave'].forEach(t => el.addEventListener(t, off));
+};
+hold(boostBtn, () => input.boost = true, () => input.boost = false);
+smokeBtn.addEventListener('pointerdown', e => { e.preventDefault(); useSmoke(); });
+
+/* ---------------------------------------------------------------- 전체화면 / 웨이크락 */
+let wakeSentinel = null;
+async function goImmersive(){
+  try{ await (wrapEl.requestFullscreen?.({navigationUI:'hide'}) || wrapEl.webkitRequestFullscreen?.()); }catch(e){}
+  try{ await screen.orientation.lock('portrait'); }catch(e){}
+  requestWake();
+}
+async function requestWake(){
+  if(!feat.wake || wakeSentinel) return;
+  try{
+    wakeSentinel = await navigator.wakeLock.request('screen');
+    wakeSentinel.addEventListener('release', () => wakeSentinel = null);
+  }catch(e){ wakeSentinel = null; }
+}
+function releaseWake(){ try{ wakeSentinel && wakeSentinel.release(); }catch(e){} wakeSentinel = null; }
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){ if(state==='playing') doPause(); Audio2.suspend(); }
+  else { if(state==='playing') requestWake(); }
+});
+
+/* ---------------------------------------------------------------- 토스트 */
+let toastT = 0;
+function toast(msg, ms=1500){
+  const el = $('#toast'); el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+/* ---------------------------------------------------------------- 게임 리셋 */
+function reset(){
+  player = { x:W/2, vx:0, v:430, tilt:0, hp:1 };
+  cops = []; traffic = []; items = []; hazards = []; parts = [];
+  dist = 0; score = 0; combo = 0; comboT = 0; heat = 1; capture = 0;
+  shakeAmt = 0; scrollY = 0; flash = 0;
+  boostFuel = 100; boostOn = 0; smokeStock = 2; smokeT = 0; blowoutT = 0; crashT = 0;
+  spawn.traffic = 0.8; spawn.cop = 3.2; spawn.item = 4.0; spawn.hazard = 14;
+  stats = { near:0, crash:0, copsOut:0, nos:0, smoke:0, top:0 };
+
+  /* 1부 성적 반영 — 조용히 탈옥했을수록 도주 조건이 좋다 */
+  if(Carry){
+    smokeStock = Carry.smoke;
+    boostFuel  = Carry.boost;
+    capture    = Carry.startCapture || 0;
+    score      = Carry.bonus;
+    spawn.cop  = 3.2 + Carry.copDelay;
+  }
+}
+const spawn = { traffic:0, cop:0, item:0, hazard:0 };
+
+/* ---------------------------------------------------------------- 화면 전환 */
+function show(id){ ['menu','pause','over'].forEach(k => $('#'+k).classList.toggle('hide', k !== id)); }
+function hud(on){
+  boostBtn.classList.toggle('hide', !on);
+  smokeBtn.classList.toggle('hide', !on);
+  $('#pauseBtn').classList.toggle('hide', !on);
+}
+function startGame(){
+  Audio2.unlock(); Audio2.mute(!opt.sound);
+  if(opt.tilt) requestTilt();
+  resize(); reset(); calibrateTilt();
+  state = 'playing'; show(null); hud(true); requestWake();
+  lastT = performance.now();
+  toast(Carry ? '훔친 차로 출발 — 사이렌이 따라붙기까지 ' + Carry.copDelay + '초'
+              : (opt.tilt && feat.tilt ? '폰을 기울여 조향 · 드래그도 가능' : '화면을 좌우로 드래그해 조향'), 2400);
+}
+function doPause(){
+  if(state !== 'playing') return;
+  state = 'pause'; show('pause'); hud(false); releaseWake(); Audio2.siren(0);
+}
+function doResume(){
+  if(state !== 'pause') return;
+  Audio2.resume(); calibrateTilt();
+  state = 'playing'; show(null); hud(true); requestWake(); lastT = performance.now();
+}
+function toMenu(){
+  state = 'menu'; show('menu'); hud(false); releaseWake();
+  $('#mBest').textContent = store.best.toLocaleString();
+  $('#mDist').innerHTML = store.dist.toLocaleString() + '<small style="font-size:12px">m</small>';
+  renderFeatures();
+}
+function gameOver(reason){
+  state = 'over'; hud(false); releaseWake();
+  const s = score|0;
+  const best = Math.max(store.best, s); store.best = best;
+  store.dist = Math.max(store.dist, dist|0);
+  buzz([90,60,90,60,180]); Audio2.bust(); Audio2.siren(0);
+  $('#overTag').textContent = reason === 'bust' ? 'BUSTED' : 'WRECKED';
+  $('#overTitle').textContent = reason === 'bust' ? '검거되었다' : '차가 못 쓰게 됐다';
+  $('#oScore').textContent = s.toLocaleString();
+  $('#oBest').textContent = best.toLocaleString();
+  const rows = [
+    ['도주 거리', (dist|0).toLocaleString()+' m'],
+    ['최고 속도', (stats.top/4|0)+' km/h'],
+    ['아차 상황 통과', stats.near+'회'],
+    ['따돌린 순찰차', stats.copsOut+'대'],
+    ['충돌', stats.crash+'회'],
+    ['부스터 / 연막', stats.nos+' / '+stats.smoke],
+    ['최종 수배 등급', 'LEVEL '+heat],
+  ];
+  if(Carry){
+    rows.unshift(
+      ['1부 탈옥 등급', Carry.grade],
+      ['1부 시간 / 체포', Carry.time+'초 / '+Carry.deaths+'회'],
+      ['탈옥 보너스', '+'+Carry.bonus.toLocaleString()]
+    );
+    $('#overTitle').textContent = reason === 'bust'
+      ? '결국 다시 잡혔다' : '차가 못 쓰게 됐다';
+  }
+  $('#statCard').innerHTML = '<h3>'+(Carry?'1부 + 2부 최종 기록':'기록')+'</h3>' + rows.map(([a,b]) =>
+    `<div class="feat ok" style="justify-content:space-between"><b style="font-weight:600;opacity:.7">${a}</b><em style="opacity:1;font-weight:800">${b}</em></div>`
+  ).join('');
+  show('over');
+}
+$('#startBtn').onclick  = () => { goImmersive(); startGame(); };
+$('#retryBtn').onclick  = () => startGame();
+$('#menuBtn').onclick   = () => toMenu();
+$('#resumeBtn').onclick = () => doResume();
+$('#quitBtn').onclick   = () => {   // 기록만 남기고 메뉴로
+  store.best = Math.max(store.best, score|0);
+  store.dist = Math.max(store.dist, dist|0);
+  toMenu();
+};
+$('#pauseBtn').onclick  = () => doPause();
+$('#prisonBtn').onclick = () => { location.href = 'prison.html'; };
+$('#hubBtn').onclick    = () => { location.href = 'index.html'; };
+
+/* ---------------------------------------------------------------- 액션 */
+function useSmoke(){
+  if(state !== 'playing' || smokeStock <= 0 || smokeT > 0) return;
+  smokeStock--; smokeT = 3.2; stats.smoke++;
+  Audio2.puff(); buzz([25,40,25]); toast('연막 살포! 경찰 시야 차단');
+  for(let i=0;i<46;i++) parts.push({
+    x:player.x+rand(-20,20), y:car.y+car.h/2+rand(0,26),
+    vx:rand(-90,90), vy:rand(40,230), life:rand(0.9,2.0), r:rand(12,30),
+    c:'rgba(220,224,232,', fade:0.42, grow:34
+  });
+}
+function laneX(i){ return road.x + road.lane*(i+0.5); }
+
+/* ---------------------------------------------------------------- 스폰 */
+function spawnTraffic(){
+  const lane = (Math.random()*LANES)|0;
+  const truck = Math.random() < 0.22;
+  const w = truck ? road.lane*0.72 : road.lane*0.6;
+  const h = truck ? w*3.0 : w*2.0;
+  const x = laneX(lane) + rand(-road.lane*0.08, road.lane*0.08);
+  // 너무 겹치는 스폰 방지
+  for(const t of traffic) if(Math.abs(t.x-x) < road.lane*0.95 && t.y > -h*3.2) return;
+  traffic.push({ x, y:-h-20, w, h, v:rand(150,265) * (truck?0.8:1), truck,
+    col:pick(['#e2e8f2','#9aa6b8','#2f6fd0','#c2402f','#f0b429','#3d4655','#26a065','#7d4bd8']),
+    passed:false, nearOK:true });
+}
+function spawnCop(){
+  cops.push({
+    x: clamp(player.x + rand(-road.lane*1.8, road.lane*1.8), road.x+road.lane*0.4, road.x+road.w-road.lane*0.4),
+    y: H + rand(70, 240),                       // 항상 화면 아래(뒤쪽)에서만 등장
+    w: car.w*1.02, h: car.h*1.02,
+    gap: rand(200, 320), agg: rand(0.7,1.05), phase: Math.random()*6,
+    dead:0, spin:0, sx:0
+  });
+  toast('🚨 순찰차 추가 투입', 1200);
+}
+function spawnItem(){
+  const nos = Math.random() < 0.62;
+  items.push({ x: laneX((Math.random()*LANES)|0), y:-40, r:road.lane*0.24, type: nos?'nos':'smoke', t:0 });
+}
+function spawnHazard(){
+  const lane = (Math.random()*LANES)|0;
+  const wide = Math.random() < 0.4;
+  hazards.push({ x: laneX(lane) - (wide?road.lane*0.5:0), w: road.lane*(wide?2:1)*0.96, y:-30, h:22, hit:false });
+  toast('⚠️ 전방 스파이크 스트립', 1400);
+}
+
+/* ---------------------------------------------------------------- 업데이트 */
+function update(dt){
+  /* --- 난이도 --- */
+  heat = 1 + Math.min(9, (dist/620)|0);
+  const baseV = 430 + Math.min(560, dist*0.075);
+
+  /* --- 조향 입력 --- */
+  let steer = 0;
+  if(opt.tilt && tiltRaw != null && tiltActive) steer += clamp((tiltRaw - tiltZero)/22, -1, 1);
+  if(input.drag) steer += clamp((input.drag.x - player.x)/(road.lane*0.9), -1, 1);
+  if(input.keyL) steer -= 1;
+  if(input.keyR) steer += 1;
+  steer = clamp(steer, -1, 1);
+
+  /* --- 부스터 --- */
+  const wantBoost = input.boost && boostFuel > 1 && crashT <= 0;
+  if(wantBoost){
+    if(boostOn <= 0){ Audio2.nos(); buzz(30); stats.nos++; }
+    boostOn = 0.2; boostFuel = Math.max(0, boostFuel - 26*dt);
+  } else {
+    boostOn = Math.max(0, boostOn - dt);
+    boostFuel = Math.min(100, boostFuel + (dist>0?6.5:0)*dt);
+  }
+  boostBtn.classList.toggle('on', wantBoost);
+  boostBtn.classList.toggle('dim', boostFuel < 8);
+  smokeBtn.classList.toggle('dim', smokeStock <= 0);
+  smokeBtn.firstChild.textContent = '연막';
+  smokeBtn.querySelector('small').textContent = smokeStock>0 ? ('×'+smokeStock) : '없음';
+
+  /* --- 속도 --- */
+  let target = baseV * (wantBoost?1.65:1) * (blowoutT>0?0.62:1) * (crashT>0?0.42:1);
+  player.v = lerp(player.v, target, dt * (target > player.v ? 1.8 : 4.2));
+  stats.top = Math.max(stats.top, player.v);
+  scrollY += player.v * dt;
+  dist += player.v * dt / 12;
+  score += player.v * dt / 12 * (1 + combo*0.12);
+
+  /* --- 횡이동 --- */
+  const steerPow = road.w * 0.82 * (blowoutT>0?0.62:1);   // 차선 수와 무관하게 도로 폭 기준으로 조향
+  player.vx = lerp(player.vx, steer * steerPow, dt*9);
+  player.x += player.vx * dt;
+  player.tilt = lerp(player.tilt, clamp(player.vx/(road.lane*2.4), -1, 1), dt*8);
+
+  const L = road.x + car.w*0.52, R = road.x + road.w - car.w*0.52;
+  if(player.x < L || player.x > R){
+    player.x = clamp(player.x, L, R); player.vx *= -0.15;
+    if(Math.random()<0.5){ Audio2.scrape(); sparks(player.x, car.y+car.h*0.3); }
+    player.v *= (1 - 1.1*dt); score = Math.max(0, score - 12*dt);
+  }
+
+  /* --- 타이머 --- */
+  smokeT = Math.max(0, smokeT - dt);
+  blowoutT = Math.max(0, blowoutT - dt);
+  crashT = Math.max(0, crashT - dt);
+  shakeCool = Math.max(0, shakeCool - dt);
+  comboT = Math.max(0, comboT - dt); if(comboT <= 0) combo = 0;
+  shakeAmt *= Math.pow(0.0009, dt);
+  flash = Math.max(0, flash - dt*3);
+
+  /* --- 스폰 --- */
+  spawn.traffic -= dt;
+  if(spawn.traffic <= 0){ spawnTraffic(); spawn.traffic = rand(0.36, 0.92) * (1 - Math.min(0.42, heat*0.045)); }
+  spawn.cop -= dt;
+  if(spawn.cop <= 0){
+    if(cops.filter(c=>!c.dead).length < Math.min(4, 1 + (heat/3|0))) spawnCop();
+    spawn.cop = rand(5, 9);
+  }
+  spawn.item -= dt;
+  if(spawn.item <= 0){ spawnItem(); spawn.item = rand(4.5, 9); }
+  if(heat >= 3){
+    spawn.hazard -= dt;
+    if(spawn.hazard <= 0){ spawnHazard(); spawn.hazard = rand(9, 18); }
+  }
+
+  const pBox = { x:player.x-car.w/2, y:car.y-car.h/2, w:car.w, h:car.h };
+
+  /* --- 일반 차량 --- */
+  for(let i=traffic.length-1; i>=0; i--){
+    const t = traffic[i];
+    t.y += (player.v - t.v) * dt;
+    if(t.y > H + t.h + 40 || t.y < -H*2){ traffic.splice(i,1); continue; }
+
+    if(hit(pBox, box(t), 0.86)){
+      crash(t); traffic.splice(i,1); continue;
+    }
+    // 아차 상황
+    const dx = Math.abs(t.x - player.x), dy = Math.abs(t.y - car.y);
+    if(t.nearOK && dy < (t.h+car.h)*0.45 && dx < (t.w+car.w)*0.62){
+      t.nearOK = false; combo = Math.min(9, combo+1); comboT = 2.4; score += 26 + combo*8;
+      stats.near++; Audio2.near(); buzz(12);
+      parts.push({ x:(t.x+player.x)/2, y:car.y, vx:0, vy:0, life:0.5, r:0, c:'rgba(255,255,255,', fade:1, text:'+'+(26+combo*8) });
+    }
+    // 경찰 vs 차량 → 경찰 스핀아웃
+    for(const c of cops){
+      if(c.dead) continue;
+      if(hit(box(c), box(t), 0.8)){
+        c.dead = 1; c.spin = 0; c.sx = Math.sign(c.x - t.x) || 1;
+        stats.copsOut++; score += 220; Audio2.copOut(); buzz([40,30,60]);
+        toast('순찰차 한 대 이탈! +220', 1300);
+        for(let k=0;k<24;k++) parts.push({ x:c.x, y:c.y, vx:rand(-260,260), vy:rand(-160,220),
+          life:rand(.3,.8), r:rand(2,5), c:'rgba(255,190,90,', fade:1.6 });
+      }
+    }
+  }
+
+  /* --- 아이템 --- */
+  for(let i=items.length-1;i>=0;i--){
+    const it = items[i]; it.y += player.v*0.86*dt; it.t += dt;
+    if(it.y > H+40){ items.splice(i,1); continue; }
+    if(Math.hypot(it.x-player.x, it.y-car.y) < it.r + car.w*0.45){
+      if(it.type==='nos'){ boostFuel = Math.min(100, boostFuel+48); toast('부스터 충전 +48%',1100); }
+      else { smokeStock = Math.min(4, smokeStock+1); toast('연막 획득',1100); }
+      score += 60; Audio2.coin(); buzz(15); items.splice(i,1);
+    }
+  }
+
+  /* --- 스파이크 스트립 --- */
+  for(let i=hazards.length-1;i>=0;i--){
+    const z = hazards[i]; z.y += player.v*dt;
+    if(z.y > H+40){ hazards.splice(i,1); continue; }
+    if(!z.hit && Math.abs(z.y - car.y) < (z.h+car.h)*0.42 &&
+       player.x+car.w*0.35 > z.x && player.x-car.w*0.35 < z.x+z.w){
+      z.hit = true; blowoutT = 4.0; shakeAmt = 16; capture = Math.min(100, capture+9);
+      Audio2.crash(); buzz([60,40,120]); toast('타이어 펑크! 속도 저하', 1800);
+      for(let k=0;k<18;k++) parts.push({ x:player.x, y:car.y+car.h*0.4, vx:rand(-200,200), vy:rand(-40,260),
+        life:rand(.3,.7), r:rand(2,6), c:'rgba(70,70,80,', fade:1.4 });
+    }
+  }
+
+  /* --- 경찰 AI --- */
+  let closest = 1e9, chasing = 0;
+  for(let i=cops.length-1;i>=0;i--){
+    const c = cops[i];
+    c.phase += dt*7;
+
+    if(c.dead){
+      c.spin += dt; c.y += (player.v*0.55 + 120)*dt; c.x += c.sx*160*dt;
+      if(c.spin > 2.4 || c.y > H+220 || c.x < -200 || c.x > W+200) cops.splice(i,1);
+      continue;
+    }
+
+    const blinded = smokeT > 0;
+    const aggr = c.agg * (0.55 + heat*0.075) * (blinded ? 0.15 : 1);
+
+    // 세로: 플레이어 뒤쪽 gap 지점을 목표로 접근 (앞으로는 절대 나오지 않는다)
+    const gapTarget = blinded ? 340
+      : Math.max(car.h*0.5, (210 - heat*11) * (crashT > 0 ? 0.3 : 1));  // 충돌로 느려지면 바짝 붙어 추돌
+    c.gap = lerp(c.gap, gapTarget, dt*0.5);
+    const ty = car.y + c.gap;
+    c.y += (ty - c.y) * clamp(1.6*aggr, .2, 4) * dt;
+    // 부스터 중이면 뒤로 밀림
+    if(boostOn > 0 && !blinded) c.y += 210*dt;
+    if(blinded) c.y += 150*dt;
+    c.y = Math.max(c.y, car.y + car.h*0.45);    // 추월 금지 — 항상 뒤쪽에 머문다
+
+    // 가로: 플레이어 추적 + 흔들림
+    const tx = blinded ? c.x + Math.sin(c.phase*0.3)*80 : player.x + Math.sin(c.phase*0.35)*road.lane*0.25;
+    c.x = lerp(c.x, tx, clamp(1.5*aggr, .15, 3.4)*dt);
+    c.x = clamp(c.x, road.x+c.w*0.5, road.x+road.w-c.w*0.5);
+    if(c.y > H+260){ cops.splice(i,1); continue; }
+
+    const d = Math.hypot(c.x-player.x, c.y-car.y);
+    closest = Math.min(closest, d);
+
+    // 물리 접촉 = 강한 체포 진행 + 밀림
+    if(hit(pBox, box(c), 0.82)){
+      capture = Math.min(100, capture + 26*dt);
+      player.v *= (1 - 1.6*dt);
+      player.x += Math.sign(player.x - c.x || 1) * 150 * dt;
+      shakeAmt = Math.max(shakeAmt, 10); flash = Math.max(flash, .5);
+      if(Math.random() < dt*8){ Audio2.scrape(); buzz(20); }
+    }
+    // 근접 = 체포 게이지 상승
+    const range = H*0.42;
+    if(d < range && !blinded){
+      const p = 1 - d/range; chasing = Math.max(chasing, p);
+      capture = Math.min(100, capture + p*p*11*dt);
+    }
+  }
+  // 게이지가 가득 차면 검거 — 회복을 적용하기 전에 판정한다
+  if(capture >= 100){ gameOver('bust'); return; }
+  if(capture > 78 && Math.random() < dt*3) buzz(18);
+  // 떼어냈으면 회복
+  const relief = (chasing < 0.12 ? 9 : 1.5) + (smokeT>0?16:0) + (boostOn>0?4:0);
+  capture = Math.max(0, capture - relief*dt);
+
+  /* --- 사운드 --- */
+  Audio2.engine(player.v, true);
+  Audio2.siren(closest < H*0.75 ? clamp(1 - closest/(H*0.75), 0, 1) : 0);
+
+  /* --- 파티클 --- */
+  for(let i=parts.length-1;i>=0;i--){
+    const p = parts[i];
+    p.life -= dt*(p.fade||1);
+    p.x += (p.vx||0)*dt; p.y += ((p.vy||0) + player.v*0.25)*dt;
+    if(p.grow) p.r += p.grow*dt;
+    if(p.life <= 0) parts.splice(i,1);
+  }
+  // 배기/타이어 흔적
+  if(boostOn > 0 || blowoutT > 0){
+    parts.push({ x:player.x+rand(-car.w*0.3,car.w*0.3), y:car.y+car.h*0.52,
+      vx:rand(-40,40), vy:rand(60,180), life:rand(.25,.6), r:rand(4,10),
+      c: boostOn>0 ? 'rgba(120,180,255,' : 'rgba(60,60,66,', fade:2.2, grow:22 });
+  }
+}
+
+function box(o){ return { x:o.x-o.w/2, y:o.y-o.h/2, w:o.w, h:o.h }; }
+function hit(a, b, s=1){
+  const ax = a.x + a.w*(1-s)/2, ay = a.y + a.h*(1-s)/2, aw = a.w*s, ah = a.h*s;
+  const bx = b.x + b.w*(1-s)/2, by = b.y + b.h*(1-s)/2, bw = b.w*s, bh = b.h*s;
+  return ax < bx+bw && ax+aw > bx && ay < by+bh && ay+ah > by;
+}
+function sparks(x,y){
+  for(let i=0;i<6;i++) parts.push({ x, y, vx:rand(-120,120), vy:rand(-60,90),
+    life:rand(.15,.35), r:rand(1.5,3), c:'rgba(255,214,120,', fade:2.4 });
+}
+function crash(t){
+  crashT = 1.15; shakeAmt = 26; flash = 1; combo = 0; stats.crash++;
+  capture = Math.min(100, capture + 13);
+  player.v *= 0.45;
+  Audio2.crash(); buzz([120,60,160]);
+  for(let i=0;i<34;i++) parts.push({ x:(t.x+player.x)/2, y:(t.y+car.y)/2,
+    vx:rand(-320,320), vy:rand(-260,260), life:rand(.3,.9), r:rand(2,6),
+    c: pick(['rgba(255,200,90,','rgba(255,120,60,','rgba(230,230,240,']), fade:1.5 });
+}
+
+/* ---------------------------------------------------------------- 그리기 */
+function rr(x,y,w,h,r){
+  const k = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+k,y); ctx.arcTo(x+w,y,x+w,y+h,k); ctx.arcTo(x+w,y+h,x,y+h,k);
+  ctx.arcTo(x,y+h,x,y,k); ctx.arcTo(x,y,x+w,y,k); ctx.closePath();
+}
+
+function draw(){
+  const sh = shakeAmt;
+  ctx.save();
+  if(sh > 0.4) ctx.translate(rand(-sh,sh), rand(-sh,sh));
+
+  /* 배경 */
+  ctx.fillStyle = '#0a1018'; ctx.fillRect(-40,-40,W+80,H+80);
+  // 원경 지평선 글로우
+  const g = ctx.createLinearGradient(0,0,0,H*0.42);
+  g.addColorStop(0,'rgba(40,66,110,.55)'); g.addColorStop(1,'rgba(10,16,24,0)');
+  ctx.fillStyle = g; ctx.fillRect(-40,-40,W+80,H*0.42);
+
+  /* 노면 */
+  ctx.fillStyle = '#22262e';
+  ctx.fillRect(road.x, -40, road.w, H+80);
+  // 노면 질감
+  ctx.fillStyle = 'rgba(255,255,255,.014)';
+  const band = 160, off = scrollY % band;
+  for(let y=-band+off; y<H+band; y+=band) ctx.fillRect(road.x, y, road.w, band/2);
+
+  /* 노측 */
+  drawRoadside();
+
+  /* 차선 */
+  ctx.strokeStyle = 'rgba(240,244,250,.72)'; ctx.lineWidth = Math.max(2.5, road.lane*0.045);
+  const dash = road.lane*0.62, gap = road.lane*0.62;
+  ctx.setLineDash([dash, gap]);
+  ctx.lineDashOffset = -(scrollY % (dash+gap));
+  for(let i=1;i<LANES;i++){
+    ctx.beginPath(); ctx.moveTo(laneX(i)-road.lane/2, -40); ctx.lineTo(laneX(i)-road.lane/2, H+40); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // 가장자리 실선
+  ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = Math.max(3, road.lane*0.055);
+  ctx.beginPath(); ctx.moveTo(road.x+4,-40); ctx.lineTo(road.x+4,H+40);
+  ctx.moveTo(road.x+road.w-4,-40); ctx.lineTo(road.x+road.w-4,H+40); ctx.stroke();
+
+  /* 스파이크 */
+  for(const z of hazards){
+    ctx.fillStyle = z.hit ? '#4a3b2a' : '#6b6f78';
+    rr(z.x, z.y-z.h/2, z.w, z.h, 4); ctx.fill();
+    ctx.fillStyle = '#d8dde6';
+    for(let x=z.x+6; x<z.x+z.w-4; x+=10){
+      ctx.beginPath(); ctx.moveTo(x, z.y-z.h/2); ctx.lineTo(x+4, z.y-z.h/2-7); ctx.lineTo(x+8, z.y-z.h/2); ctx.fill();
+    }
+  }
+
+  /* 아이템 */
+  for(const it of items){
+    const pulse = 1 + Math.sin(it.t*7)*0.08;
+    ctx.save(); ctx.translate(it.x, it.y); ctx.scale(pulse,pulse);
+    const nos = it.type==='nos';
+    ctx.shadowBlur = 18; ctx.shadowColor = nos ? 'rgba(70,150,255,.9)' : 'rgba(255,200,70,.9)';
+    ctx.fillStyle = nos ? '#2f7fe8' : '#e8a92f';
+    rr(-it.r,-it.r,it.r*2,it.r*2, it.r*0.45); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#fff'; ctx.font = `800 ${it.r*0.95}px system-ui`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(nos?'N':'S', 0, 1);
+    ctx.restore();
+  }
+
+  /* 일반 차량 */
+  for(const t of traffic) drawCar(t.x, t.y, t.w, t.h, { body:t.col, cop:false, truck:t.truck, away:true });
+
+  /* 경찰 */
+  for(const c of cops){
+    ctx.save();
+    if(c.dead){ ctx.translate(c.x,c.y); ctx.rotate(c.spin*7); ctx.translate(-c.x,-c.y); ctx.globalAlpha = clamp(1-c.spin/2.4,0,1); }
+    drawCop(c);
+    ctx.restore();
+  }
+
+  /* 연막 및 파티클 */
+  for(const p of parts){
+    if(p.text){
+      ctx.fillStyle = `rgba(255,255,255,${clamp(p.life*2,0,1)})`;
+      ctx.font = '800 15px system-ui'; ctx.textAlign='center';
+      ctx.fillText(p.text, p.x, p.y - (0.5-p.life)*40);
+    } else {
+      ctx.fillStyle = p.c + clamp(p.life,0,1).toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.2832); ctx.fill();
+    }
+  }
+
+  /* 플레이어 */
+  drawPlayer();
+
+  ctx.restore();
+
+  /* 경광등 화면 물들이기 */
+  let sirenGlow = 0;
+  for(const c of cops) if(!c.dead) sirenGlow = Math.max(sirenGlow, 1 - Math.hypot(c.x-player.x, c.y-car.y)/(H*0.6));
+  if(sirenGlow > 0){
+    const t = performance.now()/150;
+    const col = Math.sin(t) > 0 ? '255,50,70' : '60,120,255';
+    ctx.fillStyle = `rgba(${col},${clamp(sirenGlow,0,1)*0.20})`;
+    ctx.fillRect(0,0,W,H);
+  }
+  if(flash > 0){ ctx.fillStyle = `rgba(255,90,70,${flash*0.28})`; ctx.fillRect(0,0,W,H); }
+  if(boostOn > 0){
+    const gg = ctx.createRadialGradient(W/2,car.y,H*0.1,W/2,car.y,H*0.75);
+    gg.addColorStop(0,'rgba(90,160,255,0)'); gg.addColorStop(1,'rgba(70,140,255,.20)');
+    ctx.fillStyle = gg; ctx.fillRect(0,0,W,H);
+  }
+
+  drawHUD();
+}
+
+function drawRoadside(){
+  const lw = road.x, rw = W - (road.x+road.w);
+  ctx.fillStyle = '#0e1a14';
+  ctx.fillRect(-40,-40, lw+40, H+80);
+  ctx.fillRect(road.x+road.w, -40, rw+40, H+80);
+  // 가드레일
+  ctx.strokeStyle = 'rgba(170,180,195,.35)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(road.x-7,-40); ctx.lineTo(road.x-7,H+40);
+  ctx.moveTo(road.x+road.w+7,-40); ctx.lineTo(road.x+road.w+7,H+40); ctx.stroke();
+  // 지주 + 가로등 (스크롤)
+  const step = 118, off = scrollY % step;
+  for(let y=-step+off; y<H+step; y+=step){
+    ctx.fillStyle = 'rgba(150,160,175,.30)';
+    ctx.fillRect(road.x-9, y, 4, 16);
+    ctx.fillRect(road.x+road.w+5, y, 4, 16);
+  }
+  const step2 = 300, off2 = scrollY % step2;
+  for(let y=-step2+off2; y<H+step2; y+=step2){
+    // 가로등 기둥 + 빛
+    ctx.fillStyle = 'rgba(120,130,145,.5)';
+    ctx.fillRect(road.x-16, y, 3, 46);
+    const gg = ctx.createRadialGradient(road.x+16, y+8, 2, road.x+16, y+8, 120);
+    gg.addColorStop(0,'rgba(255,225,160,.20)'); gg.addColorStop(1,'rgba(255,225,160,0)');
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(road.x+16, y+8, 120, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = 'rgba(120,130,145,.5)';
+    ctx.fillRect(road.x+road.w+13, y+150, 3, 46);
+    const g2 = ctx.createRadialGradient(road.x+road.w-16, y+158, 2, road.x+road.w-16, y+158, 120);
+    g2.addColorStop(0,'rgba(255,225,160,.20)'); g2.addColorStop(1,'rgba(255,225,160,0)');
+    ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(road.x+road.w-16, y+158, 120, 0, 6.2832); ctx.fill();
+  }
+}
+
+function drawCar(x, y, w, h, o){
+  const bx = x-w/2, by = y-h/2;
+  // 그림자
+  ctx.fillStyle = 'rgba(0,0,0,.35)';
+  rr(bx+3, by+6, w, h, w*0.22); ctx.fill();
+  // 바디
+  const grad = ctx.createLinearGradient(bx,0,bx+w,0);
+  grad.addColorStop(0,'rgba(0,0,0,.28)'); grad.addColorStop(.35,'rgba(255,255,255,.10)'); grad.addColorStop(1,'rgba(0,0,0,.30)');
+  ctx.fillStyle = o.body; rr(bx, by, w, h, w*0.22); ctx.fill();
+  ctx.fillStyle = grad; rr(bx, by, w, h, w*0.22); ctx.fill();
+  // 지붕 / 유리
+  ctx.fillStyle = 'rgba(12,18,28,.85)';
+  rr(bx+w*0.13, by+h*(o.truck?0.10:0.22), w*0.74, h*(o.truck?0.2:0.34), w*0.14); ctx.fill();
+  if(!o.truck){
+    ctx.fillStyle = 'rgba(150,190,235,.22)';
+    rr(bx+w*0.16, by+h*0.24, w*0.68, h*0.13, w*0.1); ctx.fill();
+  }
+  // 바퀴
+  ctx.fillStyle = '#0b0d11';
+  const ww = w*0.12, wh = h*0.16;
+  rr(bx-ww*0.5, by+h*0.14, ww, wh, 2); ctx.fill();
+  rr(bx+w-ww*0.5, by+h*0.14, ww, wh, 2); ctx.fill();
+  rr(bx-ww*0.5, by+h*0.68, ww, wh, 2); ctx.fill();
+  rr(bx+w-ww*0.5, by+h*0.68, ww, wh, 2); ctx.fill();
+  // 등화 — away:같은 방향 주행이라 후미등이 보인다
+  if(o.away){
+    ctx.fillStyle = 'rgba(255,70,70,.95)';
+    rr(bx+w*0.10, by+h*0.94, w*0.2, h*0.035, 2); ctx.fill();
+    rr(bx+w*0.70, by+h*0.94, w*0.2, h*0.035, 2); ctx.fill();
+  }
+}
+
+function drawCop(c){
+  drawCar(c.x, c.y, c.w, c.h, { body:'#f2f5fa', cop:true, away:true });
+  const bx = c.x-c.w/2, by = c.y-c.h/2;
+  // 검은 도어 패널
+  ctx.fillStyle = 'rgba(20,24,32,.9)';
+  rr(bx+c.w*0.02, by+c.h*0.42, c.w*0.96, c.h*0.26, 3); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  ctx.font = `800 ${c.w*0.19}px system-ui`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('POLICE', c.x, by+c.h*0.55);
+  // 경광등 바
+  const on = Math.sin(c.phase) > 0;
+  const barY = by + c.h*0.34, barH = c.h*0.055, barW = c.w*0.62;
+  ctx.fillStyle = '#1b2029'; rr(c.x-barW/2, barY, barW, barH, 2); ctx.fill();
+  ctx.shadowBlur = 26;
+  ctx.shadowColor = on ? 'rgba(255,40,60,.95)' : 'rgba(60,120,255,.95)';
+  ctx.fillStyle = on ? '#ff2b40' : '#3b7cff';
+  rr(c.x-barW/2, barY, barW/2, barH, 2); ctx.fill();
+  ctx.shadowColor = on ? 'rgba(60,120,255,.95)' : 'rgba(255,40,60,.95)';
+  ctx.fillStyle = on ? '#3b7cff' : '#ff2b40';
+  rr(c.x, barY, barW/2, barH, 2); ctx.fill();
+  ctx.shadowBlur = 0;
+  // 헤드라이트 콘 (앞차인 플레이어를 비춘다)
+  if(!c.dead){
+    const gg = ctx.createLinearGradient(0, by, 0, by - c.h*1.1);
+    gg.addColorStop(0,'rgba(255,246,214,.16)'); gg.addColorStop(1,'rgba(255,246,214,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.moveTo(bx+c.w*0.16, by); ctx.lineTo(bx+c.w*0.84, by);
+    ctx.lineTo(bx+c.w*1.35, by-c.h*1.1); ctx.lineTo(bx-c.w*0.35, by-c.h*1.1); ctx.fill();
+  }
+}
+
+function drawPlayer(){
+  const x = player.x, y = car.y, w = car.w, h = car.h;
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(player.tilt*0.14); ctx.translate(-x,-y);
+  // 부스터 불꽃
+  if(boostOn > 0){
+    const f = 1 + Math.sin(performance.now()/40)*0.25;
+    const gg = ctx.createLinearGradient(0, y+h*0.5, 0, y+h*0.5 + h*0.8*f);
+    gg.addColorStop(0,'rgba(180,220,255,.95)'); gg.addColorStop(.4,'rgba(70,150,255,.6)'); gg.addColorStop(1,'rgba(70,150,255,0)');
+    ctx.fillStyle = gg;
+    ctx.beginPath(); ctx.moveTo(x-w*0.26, y+h*0.48); ctx.lineTo(x+w*0.26, y+h*0.48);
+    ctx.lineTo(x, y+h*0.5+h*0.85*f); ctx.fill();
+  }
+  drawCar(x, y, w, h, { body:'#d8342f', away:false });
+  // 레이싱 스트라이프
+  ctx.fillStyle = 'rgba(250,250,255,.8)';
+  rr(x-w*0.06, y-h*0.46, w*0.12, h*0.92, 2); ctx.fill();
+  // 헤드라이트 빔
+  const gg = ctx.createLinearGradient(0, y-h*0.5, 0, y-h*0.5-h*1.5);
+  gg.addColorStop(0,'rgba(255,250,225,.20)'); gg.addColorStop(1,'rgba(255,250,225,0)');
+  ctx.fillStyle = gg;
+  ctx.beginPath(); ctx.moveTo(x-w*0.34, y-h*0.5); ctx.lineTo(x+w*0.34, y-h*0.5);
+  ctx.lineTo(x+w*1.1, y-h*0.5-h*1.5); ctx.lineTo(x-w*1.1, y-h*0.5-h*1.5); ctx.fill();
+  ctx.fillStyle = '#fff8dc';
+  rr(x-w*0.36, y-h*0.5, w*0.2, h*0.03, 2); ctx.fill();
+  rr(x+w*0.16, y-h*0.5, w*0.2, h*0.03, 2); ctx.fill();
+  ctx.restore();
+}
+
+function drawHUD(){
+  const top = 14 + (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--safe-t')) || 0);
+  ctx.textBaseline = 'top';
+
+  // 점수
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#fff'; ctx.font = '800 30px -apple-system,system-ui';
+  ctx.fillText((score|0).toLocaleString(), 16, top+8);
+  ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.font = '700 11px system-ui';
+  ctx.fillText('SCORE  ·  BEST ' + store.best.toLocaleString(), 17, top+42);
+
+  // 속도 / 거리
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#fff'; ctx.font = '800 22px system-ui';
+  ctx.fillText((player.v/4|0) + ' km/h', W-70, top+10);
+  ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.font = '700 11px system-ui';
+  ctx.fillText((dist|0).toLocaleString() + ' m  ·  LEVEL ' + heat, W-70, top+38);
+
+  // 콤보
+  if(combo > 0){
+    ctx.textAlign = 'center'; ctx.fillStyle = `rgba(255,200,60,${clamp(comboT,0,1)})`;
+    ctx.font = '800 17px system-ui';
+    ctx.fillText('×' + (1+combo*0.12).toFixed(1) + '  COMBO ' + combo, W/2, top+12);
+  }
+
+  // 체포 게이지 (좌측 세로 바)
+  const bx = 5, by = top+64, bw = 7, bh = H*0.30;
+  ctx.fillStyle = 'rgba(255,255,255,.10)'; rr(bx,by,bw,bh,5); ctx.fill();
+  const fh = bh*capture/100;
+  const grad = ctx.createLinearGradient(0,by+bh-fh,0,by+bh);
+  grad.addColorStop(0,'#ff2b40'); grad.addColorStop(1,'#ffb03b');
+  ctx.fillStyle = grad; rr(bx, by+bh-fh, bw, fh, 5); ctx.fill();
+  if(capture > 60){
+    ctx.save(); ctx.globalAlpha = 0.5+0.5*Math.sin(performance.now()/90);
+    ctx.fillStyle = '#ff5566'; ctx.textAlign='left'; ctx.font='800 11px system-ui';
+    ctx.fillText('체포 임박', bx+16, by+bh-fh-2); ctx.restore();
+  }
+  // 부스터 게이지 (우측 세로 바)
+  const ex = W-5-bw;
+  ctx.fillStyle = 'rgba(255,255,255,.10)'; rr(ex,by,bw,bh,5); ctx.fill();
+  const eh = bh*boostFuel/100;
+  const g2 = ctx.createLinearGradient(0,by+bh-eh,0,by+bh);
+  g2.addColorStop(0,'#8fd0ff'); g2.addColorStop(1,'#2f7fe8');
+  ctx.fillStyle = g2; rr(ex, by+bh-eh, bw, eh, 5); ctx.fill();
+
+  ctx.fillStyle='rgba(255,255,255,.35)'; ctx.font='700 9px system-ui';
+  ctx.textAlign='left';  ctx.fillText('WANTED', bx-1, by+bh+6);
+  ctx.textAlign='right'; ctx.fillText('NOS', ex+bw+1, by+bh+6);
+
+  // 연막 지속 표시
+  if(smokeT > 0){
+    ctx.textAlign='center'; ctx.fillStyle='rgba(255,225,150,.9)'; ctx.font='800 13px system-ui';
+    ctx.fillText('연막 전개 중 ' + smokeT.toFixed(1) + 's', W/2, top+H*0.06);
+  }
+  if(blowoutT > 0){
+    ctx.textAlign='center'; ctx.fillStyle='rgba(255,120,120,.9)'; ctx.font='800 13px system-ui';
+    ctx.fillText('타이어 파손 ' + blowoutT.toFixed(1) + 's', W/2, top+H*0.10);
+  }
+}
+
+/* ---------------------------------------------------------------- 메인 루프 */
+function frame(now){
+  rafId = requestAnimationFrame(frame);
+  const dt = Math.min(0.033, (now - lastT)/1000 || 0);
+  lastT = now;
+  if(state === 'playing'){ update(dt); draw(); }
+  else if(state === 'over' || state === 'pause'){ draw(); }
+  else {
+    // 메뉴 배경: 도로만 천천히 흐른다
+    scrollY += 160*dt;
+    if(!player) reset();
+    ctx.save();
+    ctx.fillStyle = '#0a1018'; ctx.fillRect(-40,-40,W+80,H+80);
+    const g = ctx.createLinearGradient(0,0,0,H*0.42);
+    g.addColorStop(0,'rgba(40,66,110,.55)'); g.addColorStop(1,'rgba(10,16,24,0)');
+    ctx.fillStyle=g; ctx.fillRect(-40,-40,W+80,H*0.42);
+    ctx.fillStyle = '#22262e'; ctx.fillRect(road.x,-40,road.w,H+80);
+    drawRoadside();
+    ctx.strokeStyle='rgba(240,244,250,.5)'; ctx.lineWidth=Math.max(2.5, road.lane*0.045);
+    const dash=road.lane*0.62, gap=road.lane*0.62;
+    ctx.setLineDash([dash,gap]); ctx.lineDashOffset = -(scrollY%(dash+gap));
+    for(let i=1;i<LANES;i++){ ctx.beginPath(); ctx.moveTo(laneX(i)-road.lane/2,-40); ctx.lineTo(laneX(i)-road.lane/2,H+40); ctx.stroke(); }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+}
+
+/* ---------------------------------------------------------------- 부트 */
+resize(); renderFeatures(); renderCarry(); toMenu();
+if(opt.tilt && !feat.tiltPerm) requestTilt();      // 안드로이드/데스크톱은 즉시 부착
+rafId = requestAnimationFrame(t => { lastT = t; frame(t); });
+
+/* PWA */
+if(feat.sw && location.protocol !== 'file:'){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
