@@ -1679,7 +1679,11 @@ $('#btn-hub').addEventListener('click', ()=>X.go('index.html'));
 
 /* 챕터 표시 — 플레이 중에는 화면을 가리지 않게 숨긴다 */
 const chapChip = X.chip(1);
-const syncChip = () => chapChip.classList.toggle('hide', $('#sc-play').classList.contains('show'));
+const syncChip = () => {
+  const playing = $('#sc-play').classList.contains('show');
+  chapChip.classList.toggle('hide', playing);
+  if(X.stamp) X.stamp.classList.toggle('hide', playing);
+};
 new MutationObserver(syncChip).observe($('#stack'), {subtree:true, attributes:true, attributeFilter:['class']});
 syncChip();
 $('#hud-sfx').addEventListener('click', ()=>{

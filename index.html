@@ -270,9 +270,7 @@ $('#featList').innerHTML = feats.map(([n,a,ok]) =>
   `<div class="feat ${ok?'':'no'}"><i>${ok?'✓':'—'}</i><b>${n}</b><em>${a}</em></div>`
 ).join('');
 
-if('serviceWorker' in navigator && location.protocol !== 'file:'){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
-}
+/* 서비스워커 등록·갱신은 shared.js가 한다 (중복 등록 금지) */
 </script>
 </body>
 </html>

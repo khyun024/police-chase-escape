@@ -1,5 +1,5 @@
 /* 경찰 추격 탈출 — 오프라인 캐시 서비스워커 */
-const CACHE = 'escape7-v3';
+const CACHE = 'escape7-v4';
 const ASSETS = ['./', './index.html', './prison.html', './chase.html',
                 './shared.css', './shared.js',
                 './manifest.webmanifest', './icon.svg'];

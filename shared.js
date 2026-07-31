@@ -7,6 +7,9 @@
 (function(){
   "use strict";
 
+  /* 빌드 표시 — 폰에서 어떤 버전이 떠 있는지 눈으로 확인할 수 있게 */
+  const BUILD = '2026-07-31 · v7';
+
   /* ---------- 암전 오버레이 ---------- */
   const fade = document.createElement('div');
   fade.id = 'x-fade';
@@ -58,5 +61,29 @@
     go(t.getAttribute('data-go'), { jump: t.hasAttribute('data-jump') });
   });
 
-  window.X = { go, chip, cameFromPrison, fade };
+  /* ---------- 빌드 라벨 ---------- */
+  const stamp = document.createElement('div');
+  stamp.className = 'x-build';
+  stamp.textContent = 'build ' + BUILD;
+  const addStamp = () => document.body.appendChild(stamp);
+  if(document.body) addStamp(); else document.addEventListener('DOMContentLoaded', addStamp);
+
+  /* ---------- 서비스워커: 항상 최신을 받아온다 ----------
+     캐시에 눌러앉은 예전 버전 때문에 수정이 반영되지 않는 일을 막는다. */
+  if('serviceWorker' in navigator && location.protocol !== 'file:'){
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+      .then(reg => {
+        reg.update();
+        setInterval(() => reg.update(), 60000);
+      })
+      .catch(()=>{});
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(refreshing) return;            // 새 버전이 넘겨받으면 한 번만 새로고침
+      refreshing = true;
+      location.reload();
+    });
+  }
+
+  window.X = { go, chip, cameFromPrison, fade, build: BUILD, stamp };
 })();

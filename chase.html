@@ -367,11 +367,11 @@ document.querySelectorAll('.tg').forEach(tg => tg.addEventListener('click', () =
 function setDiff(k, save){
   DIFF = DIFFS[k] || DIFFS.easy;
   document.querySelectorAll('.opt[data-diff]').forEach(b => b.classList.toggle('on', b.dataset.diff === k));
-  if(save) localStorage.setItem('pce.diff', k);
+  if(save) localStorage.setItem('pce.diff2', k);
 }
 document.querySelectorAll('.opt[data-diff]').forEach(b =>
   b.addEventListener('click', () => { setDiff(b.dataset.diff, true); buzz(12); }));
-setDiff(localStorage.getItem('pce.diff') || 'normal', false);
+setDiff(localStorage.getItem('pce.diff2') || 'normal', false);
 
 /* ---------------------------------------------------------------- 햅틱 */
 function buzz(p){ if(opt.haptic && feat.vibrate){ try{ navigator.vibrate(p); }catch(e){} } }
@@ -582,7 +582,8 @@ function hud(on){
   boostBtn.classList.toggle('hide', !on);
   smokeBtn.classList.toggle('hide', !on);
   $('#pauseBtn').classList.toggle('hide', !on);
-  if(chapterChip) chapterChip.classList.toggle('hide', on);   // 주행 중에는 챕터 칩을 비운다
+  if(chapterChip) chapterChip.classList.toggle('hide', on);   // 주행 중에는 챕터 칩과 빌드 라벨을 비운다
+  if(X.stamp) X.stamp.classList.toggle('hide', on);
 }
 function startGame(){
   Audio2.unlock(); Audio2.mute(!opt.sound);
@@ -1427,10 +1428,7 @@ if(jumped){ show(null); chapterChip.classList.add('hide'); runCutscene(); }
 if(opt.tilt && !feat.tiltPerm) requestTilt();      // 안드로이드/데스크톱은 즉시 부착
 rafId = requestAnimationFrame(t => { lastT = t; frame(t); });
 
-/* PWA */
-if(feat.sw && location.protocol !== 'file:'){
-  navigator.serviceWorker.register('sw.js').catch(()=>{});
-}
+/* PWA — 서비스워커 등록·갱신은 shared.js가 맡는다 (중복 등록 금지) */
 </script>
 </body>
 </html>

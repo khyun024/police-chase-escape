@@ -47,6 +47,14 @@ html,body{ background:var(--bg); color:var(--fg); font-family:var(--sans); }
 .x-chip .dot.on{ background:var(--accent); }
 .x-chip.hide{ opacity:0; }
 
+/* ---------------- 빌드 라벨 ---------------- */
+.x-build{
+  position:fixed; right:8px; bottom:calc(6px + env(safe-area-inset-bottom)); z-index:55;
+  font-family:var(--mono); font-size:9px; letter-spacing:.06em; color:rgba(139,152,166,.45);
+  pointer-events:none; transition:opacity .3s;
+}
+.x-build.hide{ opacity:0; }
+
 /* ---------------- 장면 전환 암전 ---------------- */
 #x-fade{
   position:fixed; inset:0; background:#05070a; z-index:9998;
