@@ -3,787 +3,1707 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#0a0c10">
-<title>ESCAPE 7 · 1부 — 7번의 탈옥</title>
+<meta name="theme-color" content="#0b0d10">
+<title>ESCAPE 7 · 1부 — 감옥 탈출</title>
 <style>
   :root{
-    --bg:#0a0c10; --card:#141922; --line:#242c38; --fg:#eef3f8; --dim:#8494a4;
-    --orange:#ff8a3d; --cream:#ffd9a0; --red:#ff4257; --cyan:#57d8ff; --green:#5be08a;
-    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --bg:#0b0d10; --bg2:#12161b; --line:#232b33;
+    --fg:#e7ecf2; --dim:#8b98a6;
+    --amber:#ffb340; --amber2:#ff8a1f;
+    --red:#ff4d4d; --green:#4ade80; --blue:#5cc8ff;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;margin:0}
-  body{position:fixed;inset:0;overflow:hidden;background:var(--bg);color:var(--fg);
-       font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
-       user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:none}
-  .app{display:flex;flex-direction:column;height:100%;max-width:560px;margin:0 auto;
-       padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-  #stack{position:relative;flex:1;min-height:0}
-  .screen{position:absolute;inset:0;display:none;flex-direction:column;padding:20px;overflow-y:auto}
-  .screen.show{display:flex;animation:in .26s ease}
-  @keyframes in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
-  .mid{justify-content:center}
-  h1{font-size:34px;margin:8px 0 4px;line-height:1.1;letter-spacing:-.02em}
-  h1 small{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.3em;color:var(--orange);margin-bottom:8px}
-  p{line-height:1.7;font-size:14px;color:var(--dim)}
-  .btn{appearance:none;border:0;width:100%;padding:16px;margin-top:10px;border-radius:14px;
-       background:var(--orange);color:#20120a;font-family:inherit;font-size:16px;font-weight:900;
-       box-shadow:0 10px 26px -14px var(--orange)}
-  .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--dim);font-weight:600;font-size:13.5px;box-shadow:none;padding:13px}
+  body{
+    position:fixed; inset:0; overflow:hidden;
+    background:
+      radial-gradient(120% 80% at 50% -10%, #1b2129 0%, var(--bg) 55%),
+      var(--bg);
+    color:var(--fg);
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    user-select:none; -webkit-user-select:none;
+    touch-action:none; overscroll-behavior:none;
+  }
+  .app{
+    display:flex; flex-direction:column; height:100%;
+    max-width:520px; margin:0 auto; position:relative;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  /* ---------- HUD ---------- */
+  .hud{padding:10px 14px 8px; border-bottom:1px solid var(--line); background:rgba(11,13,16,.7); backdrop-filter:blur(6px)}
+  .hud[hidden]{display:none}
+  .hud-row{display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--dim)}
+  .tag{background:var(--line); color:var(--fg); padding:2px 7px; border-radius:4px; font-size:10px}
+  .hud-row .right{margin-left:auto; color:var(--amber)}
+  #hud-sfx{appearance:none;background:none;border:0;color:var(--dim);font-size:14px;padding:0 0 0 6px;line-height:1}
+  .rec{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--line);
+       border-radius:10px;padding:8px 10px;margin-top:16px;line-height:1.7}
+  .rec b{color:var(--amber)}
+  .diag{display:flex;flex-direction:column;gap:6px;overflow:auto;min-height:0}
+  .diag-row{display:flex;align-items:center;gap:8px;font-size:13px;
+            border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:#0f1318}
+  .diag-row .nm{font-weight:700}
+  .diag-row .vl{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--dim);text-align:right}
+  .diag-row.ok{border-color:#1f5236}
+  .diag-row.no{border-color:#3a3f47}
+  .diag-row .st{width:16px;text-align:center}
+  .alarm{height:5px; margin-top:8px; background:#1a2028; border-radius:99px; overflow:hidden}
+  .alarm-fill{height:100%; width:0%; border-radius:99px; background:linear-gradient(90deg,var(--green),var(--amber),var(--red)); transition:width .3s}
+
+  /* ---------- 화면 전환 ---------- */
+  #stack{position:relative; flex:1; min-height:0}
+  .screen{position:absolute; inset:0; display:none; flex-direction:column; padding:18px}
+  .screen.show{display:flex; animation:fade .28s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  h1{font-size:34px; margin:0; letter-spacing:.02em; line-height:1.1}
+  h1 small{display:block; font-family:var(--mono); font-size:12px; letter-spacing:.35em; color:var(--amber); margin-bottom:10px}
+  p{line-height:1.65; color:var(--dim); font-size:14px}
+  .center{justify-content:center}
+  .btn{
+    appearance:none; border:0; width:100%; padding:16px; margin-top:10px;
+    background:linear-gradient(180deg,var(--amber),var(--amber2)); color:#1a1206;
+    font-size:16px; font-weight:800; border-radius:14px; font-family:inherit;
+    box-shadow:0 6px 22px -10px var(--amber2); cursor:pointer;
+  }
+  .btn.ghost{background:none; border:1px solid var(--line); color:var(--dim); box-shadow:none; font-weight:600; font-size:14px; padding:13px}
   .btn:active{transform:translateY(1px)}
-  .keys{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
-  .keys span{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--line);
-             border-radius:99px;padding:5px 10px}
-  .opts{display:flex;gap:8px;margin-top:14px}
-  .opt{flex:1;appearance:none;border:1px solid var(--line);background:var(--card);color:var(--fg);
-       border-radius:12px;padding:11px 8px;font-family:inherit;text-align:center}
-  .opt.on{border-color:var(--orange);background:#2a1a10}
-  .opt b{display:block;font-size:14px}
-  .opt span{font-family:var(--mono);font-size:9.5px;color:var(--dim)}
+  .kv{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+  .kv span{font-family:var(--mono); font-size:11px; color:var(--dim); border:1px solid var(--line); padding:5px 9px; border-radius:99px}
 
-  /* ---- 플레이 ---- */
-  #sc-play{padding:0}
-  .hud{display:flex;align-items:center;gap:8px;padding:10px 14px 8px;font-family:var(--mono);font-size:11px;color:var(--dim)}
-  .hud .nm{font-family:inherit;font-size:14px;font-weight:800;color:var(--fg)}
-  .hud .r{margin-left:auto;text-align:right;line-height:1.5}
-  .hud .k{color:var(--cream)}
-  .stage{position:relative;flex:1;min-height:0}
-  .stage canvas{display:block;width:100%;height:100%}
-  .ov{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
-      gap:10px;background:rgba(10,12,16,.86);padding:24px;text-align:center}
-  .ov.show{display:flex}
-  .ov h2{margin:0;font-size:24px}
-  .ov .btn{max-width:260px}
+  /* ---------- 플레이 화면 ---------- */
+  #sc-play{padding:12px}
+  .stg-head{display:flex; align-items:baseline; gap:8px; padding:0 4px 10px}
+  .stg-name{font-size:17px; font-weight:800}
+  .stg-feat{margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--amber); border:1px solid #3a2a12; background:#1b1408; padding:3px 7px; border-radius:99px}
+  .stg-body{
+    position:relative; flex:1; min-height:0; border:1px solid var(--line); border-radius:16px;
+    background:linear-gradient(180deg,#0f1318,#0b0e12); overflow:hidden; touch-action:none;
+  }
+  .stg-foot{padding-top:12px}
+  .bar{height:8px; background:#1a2028; border-radius:99px; overflow:hidden}
+  .bar-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--amber2),var(--amber)); border-radius:99px; transition:width .08s linear}
+  .status{margin-top:8px; font-size:13px; font-weight:700; min-height:19px}
+  .hint{margin-top:2px; font-size:12px; color:var(--dim); min-height:17px; line-height:1.45}
+  #stg-skip{appearance:none;width:100%;margin-top:10px;background:none;border:1px dashed #3a3f47;color:#6d7986;padding:10px;border-radius:10px;font-family:inherit;font-size:12px}
 
-  /* ---- 조작 ---- */
-  .pad{display:flex;align-items:flex-end;gap:10px;padding:10px 12px 12px}
-  .pad .side{display:flex;gap:8px}
-  .pad button{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--fg);
-              border-radius:16px;font-family:inherit;font-weight:800;font-size:20px;
-              width:62px;height:58px;display:flex;align-items:center;justify-content:center}
-  .pad button.jump{width:96px;height:70px;background:#2a1c12;border-color:#5a3a22;color:var(--orange);font-size:15px}
-  .pad button.act{width:62px;height:58px;font-size:13px;color:var(--cyan);border-color:#22414f}
-  .pad button:active{background:#1d2532;transform:translateY(1px)}
-  .pad .sp{margin-left:auto}
-  .hint{position:absolute;left:50%;top:12px;transform:translateX(-50%);background:rgba(20,25,34,.92);
-        border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--fg);
-        opacity:0;transition:.2s;pointer-events:none;white-space:nowrap;max-width:92%}
-  .hint.show{opacity:1}
-  .tbl{display:flex;flex-direction:column;gap:5px;margin:10px 0}
-  .tr{display:flex;font-family:var(--mono);font-size:12.5px;color:var(--dim);border-bottom:1px solid #1b222c;padding:6px 2px}
-  .tr b{margin-left:auto;color:var(--fg);font-weight:400}
+  .stg-canvas{display:block; width:100%; height:100%}
+  .layer{position:absolute; inset:0}
+  .tilt-pad{position:absolute; inset:0; touch-action:none}
+
+  /* ---------- 스테이지 공용 파츠 ---------- */
+  .big{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:20px; text-align:center}
+  .glyph{font-size:74px; line-height:1; filter:drop-shadow(0 8px 20px rgba(0,0,0,.6))}
+  .caption{font-size:13px; color:var(--dim); line-height:1.5}
+  .pill{font-family:var(--mono); font-size:11px; color:var(--dim); border:1px solid var(--line); padding:4px 10px; border-radius:99px}
+
+  .tapbtn{
+    width:150px;height:150px;border-radius:50%;border:2px solid var(--amber);
+    background:radial-gradient(circle at 50% 35%,#2a1e0a,#140f06); color:var(--amber);
+    font-family:inherit;font-size:15px;font-weight:800; touch-action:none; white-space:pre-line; line-height:1.35;
+  }
+  .tapbtn:active{background:radial-gradient(circle at 50% 35%,#3a2a0d,#1b1408)}
+
+  .rivets{position:absolute; inset:0}
+  .rivet{
+    position:absolute; width:74px; height:74px; margin:-37px 0 0 -37px; border-radius:50%;
+    border:2px solid #3a434e; background:radial-gradient(circle at 40% 35%,#232b33,#12171d);
+    display:flex; align-items:center; justify-content:center; color:#6d7986; font-size:11px; font-weight:700;
+    touch-action:none; transition:transform .12s, border-color .12s, color .12s;
+  }
+  .rivet.on{border-color:var(--amber); color:var(--amber); background:radial-gradient(circle at 40% 35%,#3a2a0d,#1b1408); transform:scale(1.08)}
+
+  .meter{position:absolute; left:12px; right:12px; bottom:12px}
+  .meter .bar{height:12px}
+  .meter .bar-fill{transition:none}
+  .mark{position:absolute; top:-4px; width:2px; height:20px; background:var(--red); opacity:.9}
+
+  #toast{
+    position:absolute; left:50%; bottom:88px; transform:translate(-50%,20px);
+    background:#1c232b; border:1px solid var(--line); color:var(--fg);
+    padding:10px 14px; border-radius:12px; font-size:13px; font-weight:700;
+    opacity:0; pointer-events:none; transition:.25s; max-width:88%; text-align:center;
+  }
+  #toast.show{opacity:1; transform:translate(-50%,0)}
+  #toast.bad{border-color:#5a2020; color:#ffb3b3}
+
+  #toast.good{border-color:#1f5236; color:#b6f5cf}
+
+  .flash{position:absolute; inset:0; background:var(--red); opacity:0; pointer-events:none}
+  .flash.hit{animation:hit .45s ease}
+  @keyframes hit{0%{opacity:.35}100%{opacity:0}}
+
+  .bars-deco{position:absolute;inset:0;opacity:.25;pointer-events:none;
+    background:repeating-linear-gradient(90deg,transparent 0 34px,#2a333d 34px 38px)}
+  .story{font-size:15px;line-height:1.8;color:#c6d0da}
+  .story b{color:var(--amber)}
 </style>
 <link rel="stylesheet" href="shared.css">
 <style>
-  /* 공용 레이어와 어긋나는 부분만 보정 */
+  /* 공용 인터페이스 레이어에 맞춘 보정 — 2부와 같은 색·타이포·버튼을 쓴다 */
+  :root{ --amber:var(--orange); }
   h1 small{color:var(--accent)}
-  .opt.on{border-color:var(--accent)}
-  .pad button.jump{color:var(--accent);border-color:#5a3a22}
-  .screen{padding-top:44px}          /* 상단 챕터 칩 자리 */
-  #sc-play{padding-top:0}
+  .story b, .rec b{color:var(--accent)}
+  .tag{background:var(--panel)}
+  .screen{padding-top:46px}            /* 상단 챕터 칩 자리 */
+  #sc-play{padding-top:8px}
 </style>
 </head>
 <body class="ch1">
 <div class="app">
-<main id="stack">
 
-  <section class="screen show mid" id="sc-title">
-    <h1><small>PRISONER 7 · 1부</small>7번의 탈옥</h1>
-    <p>달리고, 뛰고, 매달리고, 숨어라.<br>
-    간수의 <b style="color:var(--cream)">손전등 빛에 몸이 닿는 순간</b> 끝이다.<br>
-    다섯 구역을 지나 담장 밖으로.<br><br>
-    <span style="font-size:13px">담장을 넘으면 그대로 <b style="color:var(--cream)">2부 · 도로 위 추격전</b>으로 이어진다.
-    <b>붙잡힌 횟수와 탈출 시간이 그대로 인계</b>되니, 깔끔하고 빠르게 나가라.</span></p>
-    <div class="keys">
-      <span>← → 이동</span><span>점프 (길게 = 높이)</span><span>↓ 웅크리기</span><span>↑ 사다리·문</span>
+  <header class="hud" id="hud" hidden>
+    <div class="hud-row">
+      <span class="tag">죄수 #7</span>
+      <span id="hud-stage">—</span>
+      <span class="right" id="hud-alarm">경보 0%</span>
+      <button id="hud-sfx" title="소리 켜기/끄기">🔊</button>
     </div>
-    <div class="opts" id="diff-opts">
-      <button class="opt on" data-d="easy"><b>쉬움</b><span>간수 느림 · 무적 1.5초</span></button>
-      <button class="opt" data-d="normal"><b>보통</b><span>원래 난이도</span></button>
-    </div>
-    <button class="btn" id="btn-start">탈옥 개시</button>
-    <button class="btn ghost" id="btn-keys">키보드 조작</button>
-  </section>
+    <div class="alarm"><div class="alarm-fill" id="alarm-fill"></div></div>
+  </header>
 
-  <section class="screen" id="sc-play">
-    <div class="hud">
-      <span class="nm" id="h-name">—</span>
-      <span id="h-lv">1/5</span>
-      <span class="r" id="h-right">—</span>
-    </div>
-    <div class="stage" id="stage">
-      <div class="hint" id="hint"></div>
-      <div class="ov" id="ov-clear">
-        <h2 id="ovc-h">구역 돌파</h2>
-        <p id="ovc-p" style="margin:0">—</p>
-        <button class="btn" id="btn-next">다음 구역</button>
+  <main id="stack">
+
+    <!-- 타이틀 -->
+    <section class="screen show center" id="sc-title">
+      <div class="bars-deco"></div>
+      <h1><small>ESCAPE · 7 — 1부</small>감옥 탈출</h1>
+      <p>당신은 죄수 <b style="color:var(--accent)">#7</b>.<br>
+      맨몸으로 8개의 관문을 통과해 담장 밖으로 나가야 한다.<br>
+      무기는 단 하나 — <b style="color:var(--accent)">당신의 휴대폰</b>이다.<br><br>
+      <span style="font-size:13px">담장을 넘으면 끊기지 않고 <b style="color:var(--accent)">2부 · 도로 위 추격전</b>으로 이어진다.
+      <b>경보 수치와 탈출 시간이 그대로 인계</b>되니, 조용히 그리고 빠르게 나가라.</span></p>
+      <div class="kv">
+        <span>흔들기</span><span>기울기</span><span>나침반</span><span>마이크</span>
+        <span>카메라</span><span>멀티터치</span><span>진동</span>
       </div>
-    </div>
-    <div class="pad">
-      <div class="side">
-        <button data-k="left">←</button>
-        <button data-k="right">→</button>
-        <button data-k="down" class="act">웅크리기</button>
-      </div>
-      <div class="sp"></div>
-      <div class="side">
-        <button data-k="up" class="act">↑</button>
-        <button data-k="jump" class="jump">점프</button>
-      </div>
-    </div>
-  </section>
+      <div class="rec" id="ti-rec" hidden>—</div>
+      <button class="btn" id="btn-start">탈출 시작</button>
+      <button class="btn ghost" id="btn-continue" hidden>이어하기</button>
+      <button class="btn ghost" id="btn-diag">센서 점검</button>
+    </section>
 
-  <section class="screen mid" id="sc-end">
-    <h1 style="font-size:28px" id="e-h">담장 밖</h1>
-    <p id="e-p">—</p>
-    <div class="tbl" id="e-t"></div>
-    <div class="tbl" id="e-carry" style="margin-top:10px"></div>
-    <button class="btn" id="btn-drive">2부 — 차를 훔쳐 달아난다 →</button>
-    <button class="btn ghost" id="btn-again">1부 다시 탈옥</button>
-    <button class="btn ghost" id="btn-hub">타이틀로</button>
-  </section>
+    <!-- 센서 점검 -->
+    <section class="screen" id="sc-diag">
+      <h1 style="font-size:22px;margin:0 0 4px">센서 점검</h1>
+      <p style="margin:6px 0 12px">이 기기에서 실제로 쓸 수 있는 기능이다. ✕ 항목은 자동으로 터치 조작으로 대체된다.</p>
+      <div class="diag" id="diag-list"></div>
+      <button class="btn ghost" id="btn-diag-back" style="margin-top:auto">돌아가기</button>
+    </section>
 
-</main>
+    <!-- 스테이지 브리핑 -->
+    <section class="screen center" id="sc-brief">
+      <div class="pill" id="br-no">STAGE 1 / 8</div>
+      <h1 style="font-size:26px;margin:14px 0 6px" id="br-name">—</h1>
+      <div class="pill" id="br-feat">—</div>
+      <p class="story" id="br-story" style="margin-top:18px">—</p>
+      <button class="btn" id="btn-go">진행</button>
+    </section>
+
+    <!-- 플레이 -->
+    <section class="screen" id="sc-play">
+      <div class="stg-head">
+        <div class="stg-name" id="stg-name">—</div>
+        <div class="stg-feat" id="stg-feat">—</div>
+      </div>
+      <div class="stg-body" id="stg-body"></div>
+      <div class="stg-foot">
+        <div class="bar"><div class="bar-fill" id="stg-bar"></div></div>
+        <div class="status" id="stg-status">—</div>
+        <div class="hint" id="stg-hint">—</div>
+        <button id="stg-skip" hidden>몰래 지나간다 (경보 +15)</button>
+      </div>
+    </section>
+
+    <!-- 통과 -->
+    <section class="screen center" id="sc-clear">
+      <div class="glyph">🔓</div>
+      <h1 style="font-size:26px;margin:6px 0">돌파</h1>
+      <p class="story" id="cl-story">—</p>
+      <button class="btn" id="btn-next">다음 관문</button>
+    </section>
+
+    <!-- 체포 -->
+    <section class="screen center" id="sc-caught">
+      <div class="glyph">🚨</div>
+      <h1 style="font-size:26px;margin:6px 0;color:var(--red)">체포됐다</h1>
+      <p class="story" id="ca-story">경보가 100%에 도달했다. 간수들이 당신을 독방으로 끌고 간다.<br>…하지만 감시는 곧 느슨해진다.</p>
+      <button class="btn" id="btn-again-stage">이 관문 다시 (경보 50%)</button>
+      <button class="btn ghost" id="btn-retry">처음부터 다시</button>
+    </section>
+
+    <!-- 엔딩 -->
+    <section class="screen center" id="sc-end">
+      <div class="glyph">🌄</div>
+      <h1 style="font-size:28px;margin:6px 0">탈출 성공</h1>
+      <p class="story" id="end-story">—</p>
+      <div class="rec" id="end-carry" hidden>—</div>
+      <div class="diag" id="end-times"></div>
+      <button class="btn" id="btn-drive">2부 — 차를 훔쳐 달아난다 →</button>
+      <button class="btn ghost" id="btn-again">1부 다시 도전</button>
+      <button class="btn ghost" id="btn-hub">타이틀로</button>
+    </section>
+
+  </main>
+
+  <div id="toast"></div>
 </div>
 
 <script src="shared.js"></script>
 <script>
 "use strict";
-const $=(s,r=document)=>r.querySelector(s);
-const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
-const buzz=p=>{try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}};
-const Clock={t:0, adv(dt){this.t+=dt*1000}};
+/* =======================================================================
+   유틸
+======================================================================= */
+const $ = (s, r=document) => r.querySelector(s);
+const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
+const lerp  = (a,b,t)=>a+(b-a)*t;
+const rand  = (a,b)=>a+Math.random()*(b-a);
+const now   = ()=>performance.now();
+/* 일부 브라우저에서 예외를 던지므로 감싼다 */
+const capture=(el,id)=>{ try{ el.setPointerCapture(id); }catch(e){} };
 
+const fmtSec = s => Math.floor(s/60)+'분 '+Math.round(s%60).toString().padStart(2,'0')+'초';
 
-/* ===================================================================
+function buzz(pattern){
+  try{ if(navigator.vibrate) navigator.vibrate(pattern); }catch(e){}
+}
+let toastTimer=null;
+function toast(msg, kind=''){
+  const t=$('#toast');
+  t.textContent=msg; t.className='show '+kind;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>{t.className=''}, 1900);
+}
+
+/* =======================================================================
+   효과음 (WebAudio 합성 — 외부 파일 없음)
+   · blocked=true 인 동안은 무음: 마이크 스테이지에서 스피커 소리가
+     그대로 입력으로 되돌아오는 것을 막는다.
+======================================================================= */
+const Sfx = {
+  ctx:null, enabled:true, blocked:false,
+
+  init(){
+    if(!this.ctx){
+      const C=window.AudioContext||window.webkitAudioContext;
+      if(C){ try{ this.ctx=new C(); }catch(e){} }
+    }
+    if(this.ctx && this.ctx.state==='suspended') this.ctx.resume().catch(()=>{});
+  },
+  get ok(){ return this.enabled && !this.blocked && this.ctx && this.ctx.state==='running'; },
+
+  tone(f, dur, o={}){
+    if(!this.ok) return;
+    try{
+      const c=this.ctx, t=c.currentTime+(o.delay||0);
+      const osc=c.createOscillator(), gn=c.createGain();
+      osc.type=o.type||'sine';
+      osc.frequency.setValueAtTime(f,t);
+      if(o.to) osc.frequency.exponentialRampToValueAtTime(Math.max(24,o.to), t+dur);
+      gn.gain.setValueAtTime(0.0001,t);
+      gn.gain.linearRampToValueAtTime(o.g||0.12, t+0.008);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+      osc.connect(gn); gn.connect(c.destination);
+      osc.start(t); osc.stop(t+dur+0.03);
+    }catch(e){ this.enabled=false; }        // 오디오 문제로 게임이 멈추지 않게
+  },
+  noise(dur, o={}){
+    if(!this.ok) return;
+    try{
+      const c=this.ctx, t=c.currentTime+(o.delay||0);
+      const len=Math.max(1,Math.ceil(c.sampleRate*dur));
+      const buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len, o.decay||2);
+      const src=c.createBufferSource(); src.buffer=buf;
+      const bp=c.createBiquadFilter(); bp.type='bandpass';
+      bp.frequency.value=o.f||1200; bp.Q.value=o.q||0.8;
+      const gn=c.createGain(); gn.gain.value=o.g||0.1;
+      src.connect(bp); bp.connect(gn); gn.connect(c.destination);
+      src.start(t);
+    }catch(e){ this.enabled=false; }
+  },
+
+  clang(){ this.tone(rand(170,250),0.16,{type:'square',g:0.055,to:120}); this.noise(0.14,{g:0.09,f:2600}); },
+  tick(){  this.tone(1500,0.025,{type:'square',g:0.035}); },
+  creak(){ this.tone(rand(300,420),0.22,{type:'sawtooth',g:0.03,to:200}); this.noise(0.2,{g:0.04,f:900,q:2}); },
+  clunk(){ this.tone(95,0.26,{type:'square',g:0.11,to:52}); this.noise(0.1,{g:0.06,f:400}); },
+  good(){  [523,659,784,1047].forEach((f,i)=>this.tone(f,0.28,{g:0.1,delay:i*0.075})); },
+  bad(){   this.tone(150,0.38,{type:'sawtooth',g:0.1,to:62}); this.noise(0.3,{g:0.06,f:500}); },
+  warn(){  this.tone(680,0.45,{type:'triangle',g:0.07,to:1080}); },
+  siren(){ for(let i=0;i<3;i++){ this.tone(720,0.32,{type:'sawtooth',g:0.07,to:380,delay:i*0.34}); } },
+  step(){  this.noise(0.07,{g:0.05,f:280,q:1.2,decay:3}); },
+  pickup(){ this.tone(880,0.1,{type:'triangle',g:0.09}); this.tone(1320,0.16,{type:'triangle',g:0.07,delay:0.08}); },
+};
+
+function sfxLabel(){ $('#hud-sfx').textContent = Sfx.enabled ? '🔊' : '🔇'; }
+
+/* =======================================================================
+   기록 저장
+======================================================================= */
+const Save = {
+  key:'escape7.v1',
+  load(){ try{ return JSON.parse(localStorage.getItem(this.key)) || {}; }catch(e){ return {}; } },
+  write(o){ try{ localStorage.setItem(this.key, JSON.stringify(o)); }catch(e){} },
+  patch(o){ const d=this.load(); this.write(Object.assign(d,o)); return d; },
+};
+
+/* =======================================================================
+   센서 매니저
+======================================================================= */
+const Sensors = {
+  motion:{x:0,y:0,z:0,last:0,ok:false},
+  orient:{alpha:null,beta:0,gamma:0,heading:null,last:0,ok:false},
+  attached:false,
+
+  async request(){
+    try{
+      if(typeof DeviceMotionEvent!=='undefined' && DeviceMotionEvent.requestPermission)
+        await DeviceMotionEvent.requestPermission();
+    }catch(e){}
+    try{
+      if(typeof DeviceOrientationEvent!=='undefined' && DeviceOrientationEvent.requestPermission)
+        await DeviceOrientationEvent.requestPermission();
+    }catch(e){}
+    this.attach();
+  },
+
+  attach(){
+    if(this.attached) return; this.attached=true;
+    window.addEventListener('devicemotion', e=>{
+      const a = e.accelerationIncludingGravity || e.acceleration;
+      if(!a || (a.x==null && a.y==null && a.z==null)) return;
+      const m=this.motion;
+      m.x=a.x||0; m.y=a.y||0; m.z=a.z||0; m.ok=true; m.last=now();
+    }, {passive:true});
+
+    const onOrient = e=>{
+      const o=this.orient;
+      if(e.beta!=null || e.gamma!=null){
+        o.beta=e.beta||0; o.gamma=e.gamma||0; o.alpha=e.alpha; o.ok=true; o.last=now();
+      }
+      if(typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading))
+        o.heading = e.webkitCompassHeading;
+      else if(e.alpha!=null)
+        o.heading = (360 - e.alpha) % 360;
+    };
+    window.addEventListener('deviceorientationabsolute', onOrient, {passive:true});
+    window.addEventListener('deviceorientation', onOrient, {passive:true});
+  },
+
+  hasMotion(){ return this.motion.ok && now()-this.motion.last < 900; },
+  hasOrient(){ return this.orient.ok && now()-this.orient.last < 900; },
+  hasHeading(){ return this.hasOrient() && this.orient.heading!=null; },
+};
+
+/* ---------- 기울기 입력 (센서 없으면 드래그 대체) ---------- */
+function TiltInput(host){
+  let cal=null;
+  const drag={on:false,x:0,y:0,ox:0,oy:0};
+  const pad=document.createElement('div'); pad.className='tilt-pad'; host.appendChild(pad);
+  pad.addEventListener('pointerdown', e=>{
+    capture(pad, e.pointerId);
+    drag.on=true; drag.ox=e.clientX; drag.oy=e.clientY; drag.x=0; drag.y=0;
+  });
+  pad.addEventListener('pointermove', e=>{
+    if(!drag.on) return;
+    drag.x=clamp((e.clientX-drag.ox)/55,-1,1);
+    drag.y=clamp((e.clientY-drag.oy)/55,-1,1);
+  });
+  const end=()=>{drag.on=false; drag.x=0; drag.y=0;};
+  pad.addEventListener('pointerup',end); pad.addEventListener('pointercancel',end);
+
+  return {
+    calibrate(){ cal = Sensors.hasOrient() ? {b:Sensors.orient.beta, g:Sensors.orient.gamma} : null; },
+    get(){
+      if(Sensors.hasOrient()){
+        if(!cal) cal={b:Sensors.orient.beta, g:Sensors.orient.gamma};
+        return {
+          x: clamp((Sensors.orient.gamma-cal.g)/28, -1, 1),
+          y: clamp((Sensors.orient.beta -cal.b)/28, -1, 1),
+          sensor:true
+        };
+      }
+      return {x:drag.x, y:drag.y, sensor:false};
+    },
+    dispose(){ pad.remove(); }
+  };
+}
+
+/* ---------- 흔들기 입력 (센서 없으면 연타 대체) ---------- */
+function ShakeInput(host, label='두드리기'){
+  let prev=null, level=0, taps=[], btn=null;
+
+  function ensureBtn(){
+    if(btn) return;
+    btn=document.createElement('button');
+    btn.className='tapbtn'; btn.textContent=label;
+    btn.style.position='absolute'; btn.style.left='50%'; btn.style.top='50%';
+    btn.style.transform='translate(-50%,-50%)';
+    btn.addEventListener('pointerdown', e=>{ e.preventDefault(); taps.push(now()); buzz(12); });
+    host.appendChild(btn);
+  }
+  function killBtn(){ if(btn){btn.remove(); btn=null;} }
+
+  return {
+    get usingSensor(){ return Sensors.hasMotion(); },
+    poll(dt){
+      if(Sensors.hasMotion()){
+        killBtn();
+        const m=Sensors.motion;
+        level *= Math.pow(0.04, dt);
+        if(prev){
+          const d=Math.hypot(m.x-prev.x, m.y-prev.y, m.z-prev.z);
+          level = Math.max(level, clamp(d/16, 0, 1));
+        }
+        prev={x:m.x,y:m.y,z:m.z};
+      }else{
+        ensureBtn();
+        const t=now();
+        taps=taps.filter(v=>t-v<800);
+        level = clamp(taps.length/7, 0, 1);
+      }
+      return level;
+    },
+    dispose(){ killBtn(); }
+  };
+}
+
+/* ---------- 마이크 ---------- */
+async function openMic(){
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}
+  });
+  const Ctx = window.AudioContext||window.webkitAudioContext;
+  const ctx = new Ctx();
+  if(ctx.state==='suspended') await ctx.resume();
+  const an = ctx.createAnalyser(); an.fftSize=1024; an.smoothingTimeConstant=.3;
+  ctx.createMediaStreamSource(stream).connect(an);
+  const buf = new Float32Array(an.fftSize);
+  return {
+    level(){
+      an.getFloatTimeDomainData(buf);
+      let s=0; for(let i=0;i<buf.length;i++) s+=buf[i]*buf[i];
+      return Math.sqrt(s/buf.length);           // 0 ~ 1 (RMS)
+    },
+    stop(){ try{stream.getTracks().forEach(t=>t.stop()); ctx.close();}catch(e){} }
+  };
+}
+
+/* ---------- 카메라(밝기 센서로 사용) ---------- */
+async function openCam(){
+  const stream = await navigator.mediaDevices.getUserMedia({
+    video:{facingMode:{ideal:'environment'}, width:{ideal:320}, height:{ideal:240}}, audio:false
+  });
+  const v=document.createElement('video');
+  v.srcObject=stream; v.playsInline=true; v.muted=true; v.setAttribute('playsinline','');
+  await v.play();
+  const c=document.createElement('canvas'); c.width=32; c.height=24;
+  const g=c.getContext('2d', {willReadFrequently:true});
+  return {
+    video:v,
+    brightness(){
+      try{ g.drawImage(v,0,0,32,24); }catch(e){ return 1; }
+      let d;
+      try{ d=g.getImageData(0,0,32,24).data; }catch(e){ return 1; }
+      let s=0;
+      for(let i=0;i<d.length;i+=4) s += d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+      return (s/(d.length/4))/255;              // 0(암) ~ 1(명)
+    },
+    stop(){ try{stream.getTracks().forEach(t=>t.stop()); v.pause(); v.srcObject=null;}catch(e){} }
+  };
+}
+
+/* ---------- 캔버스 ---------- */
+function makeCanvas(host){
+  const c=document.createElement('canvas'); c.className='stg-canvas'; host.appendChild(c);
+  const g=c.getContext('2d');
+  let w=0,h=0;
+  function fit(){
+    const r=c.getBoundingClientRect();
+    const dpr=Math.min(2, window.devicePixelRatio||1);
+    w=Math.max(1,r.width); h=Math.max(1,r.height);
+    c.width=Math.round(w*dpr); c.height=Math.round(h*dpr);
+    g.setTransform(dpr,0,0,dpr,0,0);
+  }
+  fit();
+  const ro = new ResizeObserver(fit); ro.observe(c);
+  return { g, fit, get w(){return w}, get h(){return h},
+           dispose(){ ro.disconnect(); c.remove(); } };
+}
+
+/* =======================================================================
    2부(도로 추격) 인계 — 1부 성적이 도주 조건이 된다
-=================================================================== */
+======================================================================= */
 const Handoff = {
   key:'escape7.handoff',
-  build(time, deaths, grade, diff){
-    const tier = deaths===0 ? 0 : deaths<=3 ? 1 : deaths<=8 ? 2 : 3;
-    const copDelay     = [9, 6, 3, 0][tier];      // 순찰차 첫 투입까지 여유(초)
+  build(alarm, total, grade, times){
+    const a = Math.round(alarm);
+    const tier = a<20 ? 0 : a<50 ? 1 : a<80 ? 2 : 3;     // 경보가 낮을수록 유리하다
+    const copDelay     = [9, 6, 3, 0][tier];
     const smoke        = [3, 2, 2, 1][tier];
     const boost        = [100, 100, 75, 55][tier];
     const startCapture = [0, 0, 0, 15][tier];
-    // 빠를수록 보너스 — 4분(240초) 기준, 30초당 150점
-    const speed = Math.max(0, Math.round((240 - time) / 30) * 150);
-    let bonus = [2000, 1200, 600, 0][tier] + speed;
-    if(diff === '쉬움') bonus = Math.round(bonus * 0.7);
-    return { from:'prison', mode:'action', time, deaths, grade, diff, tier,
-             copDelay, smoke, boost, startCapture, bonus, ts:Date.now() };
+    const speed = Math.max(0, Math.round((480 - total) / 60) * 200);   // 8분 기준, 1분 빠를수록 +200
+    const bonus = [2000, 1200, 600, 0][tier] + speed;
+    return { from:'prison', mode:'sensor', alarm:a, time:Math.round(total), grade, tier,
+             copDelay, smoke, boost, startCapture, bonus,
+             times:(times||[]).map(t=>t?+t.toFixed(1):0), ts:Date.now() };
   },
   save(c){ try{ localStorage.setItem(this.key, JSON.stringify(c)); }catch(e){} }
 };
 
-/* ===================================================================
-   레벨 — 원시 도형으로 조립한다 (ASCII보다 실수가 적다)
-=================================================================== */
-const H=14;
-function build(spec){
-  const W=spec.w;
-  const g=[]; for(let y=0;y<H;y++) g.push(new Array(W).fill('.'));
-  const set=(x,y,c)=>{ if(x>=0&&x<W&&y>=0&&y<H) g[y][x]=c; };
-  const box=(x,y,w,h,c)=>{ for(let j=0;j<h;j++) for(let i=0;i<w;i++) set(x+i,y+j,c); };
+/* =======================================================================
+   게임 셸
+======================================================================= */
+const Game = {
+  idx:0, alarm:0, stage:null, api:null, t0:0, wake:null,
+  times:[],          // 관문별 소요 시간(초)
+  runStart:0,        // 이번 시도 시작 시각
 
-  // 바깥 벽
-  box(0,0,1,H,'#'); box(W-1,0,1,H,'#'); box(0,0,W,1,'#');
-  // 바닥(구간별) — 나머지는 낙사 구멍
-  (spec.ground||[]).forEach(([x0,x1,y=H-2])=>box(x0,y,x1-x0,H-y,'#'));
-  (spec.blocks||[]).forEach(([x,y,w,h])=>box(x,y,w,h,'#'));
-  (spec.plats||[]).forEach(([x,y,w])=>box(x,y,w,1,'='));
-  (spec.ladders||[]).forEach(([x,y,h])=>box(x,y,1,h,'L'));
-  (spec.hazards||[]).forEach(([x,y,w])=>box(x,y,w,1,'^'));
-  // 철문은 천장까지 닿는다 — 2칸이면 점프로 넘어가 열쇠가 무의미해진다
-  (spec.doors||[]).forEach(([x,y,h])=>box(x,y,1,h||6,'D'));
-  (spec.keys||[]).forEach(([x,y])=>set(x,y,'K'));
-  set(spec.exit[0], spec.exit[1], 'E');
-  set(spec.exit[0], spec.exit[1]-1, 'E');       // 출구는 2칸 높이 — 지나치기 어렵게
-
-  return {
-    name:spec.name, w:W, h:H, grid:g,
-    start:spec.start, exit:spec.exit, hint:spec.hint||'',
-    guards:(spec.guards||[]).map(q=>({x0:q[0], x1:q[1], y:q[2], sp:q[3]||3.2, look:q[4]||7})),
-    lights:(spec.lights||[]).map(l=>({x0:l[0], x1:l[1], y:l[2], r:l[3]||2.2, sp:l[4]||3})),
-    checks:spec.checks||[]
-  };
-}
-
-const LEVELS=[
-  build({ name:'A동 감방', w:56, hint:'점프는 길게 누르면 더 높이 뛴다',
-    ground:[[1,28],[31,55]],
-    blocks:[[12,10,1,2],[20,10,2,2]],
-    plats:[[34,10,5],[41,8,5]],      // 12 → 10 → 8: 한 번에 두 칸까지만 오를 수 있다
-    keys:[[43,7]],
-    doors:[[50,6,6]],
-    hazards:[[28,12,3]],
-    start:[3,11], exit:[53,11],
-    guards:[[22,27,12,2.6,6]],
-    checks:[[14,11],[24,11],[32,11],[45,11]] }),
-
-  build({ name:'중앙 복도', w:64, hint:'간수는 등 뒤를 못 본다 — 지나간 다음 움직여라',
-    ground:[[1,20],[23,42],[45,63]],
-    blocks:[[14,10,1,2],[33,10,1,2]],
-    plats:[[20,10,3],[27,6,6],[42,10,3],[52,10,4]],
-    ladders:[[26,6,6]],
-    keys:[[54,8]],
-    doors:[[59,6,6]],
-    hazards:[[20,12,3],[42,12,3]],
-    start:[3,11], exit:[61,11],
-    guards:[[5,18,12,3.0,7],[26,40,12,3.3,7],[46,57,12,2.8,6]],
-    checks:[[12,11],[24,11],[36,11],[46,11],[56,11]] }),
-
-  build({ name:'세탁실', w:68, hint:'천장이 낮은 곳은 ↓로 웅크려 통과한다',
-    ground:[[1,24],[27,46],[49,67]],
-    blocks:[[16,9,6,2],[36,10,1,2],[58,10,1,2]],   // 낮은 통로는 구덩이 앞에서 끝난다(일어설 자리 확보)
-    plats:[[27,9,5],[33,7,5],[41,9,4],[50,9,5]],
-    keys:[[35,6]],
-    doors:[[63,6,6]],
-    hazards:[[24,12,3],[46,12,3]],
-    start:[3,11], exit:[65,11],
-    guards:[[3,14,12,3.2,7],[28,44,12,3.5,8],[50,61,12,3.0,7]],
-    checks:[[13,11],[28,11],[38,11],[50,11],[60,11]] }),
-
-  build({ name:'옥상', w:70, hint:'서치라이트에 닿으면 즉시 발각된다',
-    ground:[[1,19],[22,35],[38,53],[56,69]],
-    blocks:[[45,10,1,2]],
-    plats:[[26,9,4],[42,9,4],[60,9,4]],
-    keys:[[62,8]],
-    doors:[[67,6,6]],
-    hazards:[[19,12,3],[35,12,3],[53,12,3]],
-    start:[3,11], exit:[68,11],
-    guards:[[23,32,12,3.4,7],[39,50,12,3.2,7]],
-    lights:[[3,16,12,2.4,4],[57,66,12,2.6,4.5]],
-    checks:[[10,11],[23,11],[30,11],[39,11],[48,11],[57,11]] }),
-
-  build({ name:'담장', w:76, hint:'마지막이다 — 멈추지 마라',
-    ground:[[1,23],[26,41],[44,59],[62,75]],
-    blocks:[[30,10,1,2],[50,10,1,2]],
-    plats:[[27,10,4],[36,6,5],[45,10,4],[64,10,4],[68,8,5]],
-    ladders:[[35,6,6]],
-    keys:[[70,7]],
-    doors:[[73,6,6]],
-    hazards:[[23,12,3],[41,12,3],[59,12,3]],
-    start:[3,11], exit:[74,11],
-    guards:[[4,20,12,3.8,8],[27,38,12,3.6,7],[45,56,12,3.8,8],[63,71,12,3.4,7]],
-    lights:[[24,38,12,2.4,5],[45,57,12,2.4,5.5]],
-    checks:[[12,11],[26,11],[35,11],[44,11],[54,11],[62,11],[70,11]] }),
-];
-
-/* ===================================================================
-   게임
-=================================================================== */
-const GRAV=44, MAXFALL=32, RUN=8.6, ACC=62, FRIC=54;
-const K={left:false,right:false,up:false,down:false,jump:false};
-
-/* 난이도 — 기본은 '쉬움'
-   gsp: 간수 이동속도 배율 / chase: 추격 배율 / look: 시야 거리 보정
-   grace: 서치라이트에 버틸 수 있는 시간 / inv: 부활 후 무적 시간 */
-const DIFF={
-  easy:  { name:'쉬움', gsp:0.72, chase:1.28, look:-2, grace:0.75, inv:1.5, jump:16.4, coyote:0.17, buf:0.18, lightR:0.82 },
-  normal:{ name:'보통', gsp:1.00, chase:1.55, look:0,  grace:0.20, inv:0.8, jump:15.8, coyote:0.12, buf:0.14, lightR:1.00 },
-};
-
-const G = {
-  lv:0, L:null, cv:null, g:null, cell:26, camx:0, camy:0,
-  p:null, guards:[], lights:[], keys:0, dead:0, done:false, t:0,
-  spawn:[3,11], shake:0, flash:0, parts:[], totalTime:0, totalDead:0,
-  jumpBuf:0, coyote:0, held:false,
-  D:DIFF.easy, diff:'easy', lit:0, inv:0,
-
-  screen(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show', s.id===id)); },
-  hint(t){ const h=$('#hint'); if(!t){h.className='hint';return;} h.textContent=t; h.className='hint show';
-           clearTimeout(this._h); this._h=setTimeout(()=>h.className='hint', 3200); },
-
-  init(){
-    this.cv=document.createElement('canvas');
-    $('#stage').insertBefore(this.cv, $('#stage').firstChild);
-    this.g=this.cv.getContext('2d');
-    new ResizeObserver(()=>this.fit()).observe(this.cv);
-    this.fit();
+  screen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show', s.id===id));
   },
-  fit(){
-    const r=this.cv.getBoundingClientRect();
-    const dpr=Math.min(2, devicePixelRatio||1);
-    this.vw=Math.max(1,r.width); this.vh=Math.max(1,r.height);
-    this.cv.width=Math.round(this.vw*dpr); this.cv.height=Math.round(this.vh*dpr);
-    this.g.setTransform(dpr,0,0,dpr,0,0);
-    // 가로로 최소 11칸 정도는 보여야 앞의 함정·간수에 반응할 수 있다
-    this.cell=Math.max(15, Math.min(this.vw/11.5, this.vh/H));
+  setAlarm(v){
+    this.alarm=clamp(v,0,100);
+    $('#alarm-fill').style.width=this.alarm+'%';
+    $('#hud-alarm').textContent='경보 '+Math.round(this.alarm)+'%';
+    if(this.alarm>=100) this.caught();
+  },
+  addAlarm(v){ this.setAlarm(this.alarm+v); },
+
+  async begin(startIdx=0){
+    Sfx.init();
+    await Sensors.request();
+    try{ if('wakeLock' in navigator) this.wake=await navigator.wakeLock.request('screen'); }catch(e){}
+    this.idx=clamp(startIdx,0,STAGES.length-1);
+    this.setAlarm(0);
+    this.times=[]; this.runStart=now();
+    $('#hud').hidden=false;
+    this.brief();
   },
 
-  begin(){ this.lv=0; this.totalTime=0; this.totalDead=0; this.load(0); this.screen('sc-play'); },
-
-  load(i){
-    this.lv=i;
-    const src=LEVELS[i];
-    this.L={...src, grid:src.grid.map(r=>r.slice())};   // 원본 훼손 방지 (열쇠/문 상태)
-    const D=this.D;
-    this.guards=src.guards.map(q=>({...q, x:(q.x0+q.x1)/2, dir:1, alert:0,
-                                    sp:q.sp*D.gsp, look:Math.max(3, q.look+D.look)}));
-    this.lights=src.lights ? src.lights.map(l=>({...l, x:l.x0, dir:1,
-                                    sp:l.sp*D.gsp, r:l.r*D.lightR})) : [];
-    this.lit=0;
-    this.keys=0; this.dead=0; this.done=false; this.t=0;
-    this.spawn=src.start.slice();
-    this.parts=[];
-    this.respawn();
-    $('#h-name').textContent=src.name;
-    $('#h-lv').textContent=(i+1)+'/'+LEVELS.length;
-    $('#ov-clear').classList.remove('show');
-    this.hint(src.hint);
+  brief(){
+    this.unmount();
+    const s=STAGES[this.idx];
+    $('#br-no').textContent='STAGE '+(this.idx+1)+' / '+STAGES.length;
+    $('#br-name').textContent=s.name;
+    $('#br-feat').textContent='사용: '+s.feat;
+    $('#br-story').innerHTML=s.story;
+    $('#hud-stage').textContent=s.name;
+    this.screen('sc-brief');
   },
 
-  respawn(){
-    this.p={x:this.spawn[0]+0.5, y:this.spawn[1], vx:0, vy:0, face:1, onG:false,
-            crouch:false, climb:false, w:0.66, h:1.62, anim:0, land:0};
-    this.camx=this.p.x-6; this.camy=0;
-    this.lit=0;
-    this.inv=this.D.inv;                 // 부활 직후 잠시 무적 — 즉시 재체포 방지
+  play(){
+    this.unmount();
+    const s=STAGES[this.idx];
+    $('#stg-name').textContent=(this.idx+1)+'. '+s.name;
+    $('#stg-feat').textContent=s.feat;
+    $('#stg-bar').style.width='0%';
+    $('#stg-status').textContent='';
+    $('#stg-hint').textContent='';
+    $('#stg-skip').hidden=true;
+    this.screen('sc-play');
+    Sfx.init();
+    Sfx.blocked = !!s.silent;          // 마이크 스테이지는 무음
+
+    const host=$('#stg-body');
+    host.innerHTML='';
+    const flash=document.createElement('div'); flash.className='flash'; host.appendChild(flash);
+
+    this.api={
+      host,
+      status(t){ $('#stg-status').textContent=t; },
+      hint(t){ $('#stg-hint').textContent=t; },
+      progress(p){ $('#stg-bar').style.width=(clamp(p,0,1)*100)+'%'; },
+      buzz,
+      hit(msg, alarm=10){
+        flash.classList.remove('hit'); void flash.offsetWidth; flash.classList.add('hit');
+        buzz([40,60,40]);
+        Sfx.bad();
+        if(msg) toast(msg,'bad');
+        Game.addAlarm(alarm);
+      },
+      done(){ Game.cleared(); },
+      note(t){ toast(t); },
+      sfx:Sfx
+    };
+
+    this.t0=now();
+    this.stage=s.mount(host, this.api);
   },
 
-  at(x,y){
-    const L=this.L;
-    if(x<0||y<0||x>=L.w||y>=H) return '#';
-    return L.grid[y][x];
-  },
-  solidAt(x,y){
-    const c=this.at(x,y);
-    return c==='#' || c==='D';
+  unmount(){
+    if(this.stage && this.stage.destroy){ try{this.stage.destroy();}catch(e){} }
+    this.stage=null;
+    $('#stg-body').innerHTML='';
   },
 
-  /* --- 타일 충돌 (X 먼저, 그다음 Y) --- */
-  hitBox(px,py,w,h){
-    const x0=Math.floor(px-w/2), x1=Math.floor(px+w/2);
-    const y0=Math.floor(py-h), y1=Math.floor(py-0.001);
-    for(let y=y0;y<=y1;y++) for(let x=x0;x<=x1;x++){
-      if(this.solidAt(x,y)) return [x,y];
-    }
-    return null;
-  },
+  cleared(){
+    const s=STAGES[this.idx];
+    const took=(now()-this.t0)/1000;
+    this.times[this.idx]=took;
+    this.unmount();
+    Sfx.blocked=false; Sfx.good();
+    buzz([20,50,20,50,120]);
+    $('#cl-story').innerHTML=s.clear+
+      '<br><br><span class="pill">소요 '+took.toFixed(1)+'초 · 경보 '+Math.round(this.alarm)+'%</span>';
+    $('#btn-next').textContent = (this.idx+1>=STAGES.length) ? '담장을 넘는다' : '다음 관문';
+    this.screen('sc-clear');
 
-  update(dt){
-    if(!this.L || this.done) return;
-    Clock.adv(0);
-    this.t+=dt;
-    const p=this.p, L=this.L;
-
-    // ---- 입력 → 가속
-    const want=(K.right?1:0)-(K.left?1:0);
-    // 웅크리기: 머리 위가 막혀 있으면 일어서지 않는다 (낮은 통로에 끼는 것 방지)
-    const wantCrouch = K.down && p.onG && !p.climb;
-    if(p.crouch && !wantCrouch && this.hitBox(p.x, p.y, p.w, 1.62)) p.crouch=true;
-    else p.crouch=wantCrouch;
-    const maxs = p.crouch ? RUN*0.5 : RUN;
-    if(want){ p.vx += want*ACC*dt; p.face=want; }
-    else { const s=Math.sign(p.vx); p.vx -= s*Math.min(Math.abs(p.vx), FRIC*dt); }
-    p.vx=clamp(p.vx, -maxs, maxs);
-    p.h = p.crouch ? 1.0 : 1.62;
-
-    // ---- 사다리
-    const onLadder = this.at(Math.floor(p.x), Math.floor(p.y-0.5))==='L' ||
-                     this.at(Math.floor(p.x), Math.floor(p.y-1.2))==='L';
-    if(onLadder && (K.up||K.down)) p.climb=true;
-    if(!onLadder) p.climb=false;
-
-    // ---- 점프
-    const D=this.D, JUMP=D.jump;
-    this.inv=Math.max(0, this.inv-dt);
-    this.jumpBuf = K.jump ? D.buf : Math.max(0, this.jumpBuf-dt);
-    this.coyote = p.onG ? D.coyote : Math.max(0, this.coyote-dt);
-    if(this.jumpBuf>0 && (this.coyote>0 || p.climb)){
-      p.vy=-JUMP; p.onG=false; p.climb=false;
-      this.jumpBuf=0; this.coyote=0; this.held=true;
-      buzz(10); this.dust(p.x, p.y, 5);
-    }
-    if(!K.jump) this.held=false;
-    if(!this.held && p.vy<-JUMP*0.5) p.vy=-JUMP*0.5;   // 짧게 누르면 낮게 (가변 점프)
-
-    // ---- 중력 / 등반
-    if(p.climb){
-      p.vy = (K.up?-5.4:0) + (K.down?5.4:0);
-      p.vx *= 0.7;
-    }else{
-      p.vy = Math.min(MAXFALL, p.vy + GRAV*dt);
-    }
-
-    // ---- X 이동
-    let nx=p.x + p.vx*dt;
-    const hx=this.hitBox(nx, p.y, p.w, p.h);
-    if(hx){
-      if(this.at(hx[0],hx[1])==='D' && this.keys>0){         // 문은 달려들면 열린다
-        this.openDoor(hx[0],hx[1]);
-      }else{
-        nx = p.vx>0 ? hx[0]-p.w/2-0.001 : hx[0]+1+p.w/2+0.001;
-        p.vx=0;
-      }
-    }
-    p.x=clamp(nx, 0.5, L.w-0.5);
-
-    // ---- Y 이동
-    let ny=p.y + p.vy*dt;
-    p.onG=false;
-    const hy=this.hitBox(p.x, ny, p.w, p.h);
-    if(hy){
-      if(this.at(hy[0],hy[1])==='D' && this.keys>0) this.openDoor(hy[0],hy[1]);
-      else if(p.vy>0){ ny=hy[1]; p.onG=true; if(p.vy>13){ this.dust(p.x,ny,7); p.land=0.16; buzz(8);} p.vy=0; }
-      else { ny=hy[1]+1+p.h+0.001; p.vy=0; }
-    }
-    // 한 방향 발판
-    if(p.vy>0 && !p.climb){
-      const feetY=Math.floor(ny), prevY=Math.floor(p.y);
-      for(let x=Math.floor(p.x-p.w/2); x<=Math.floor(p.x+p.w/2); x++){
-        if(this.at(x,feetY)==='=' && prevY<feetY){ ny=feetY; p.vy=0; p.onG=true; if(p.land<=0){this.dust(p.x,ny,4);} break; }
-      }
-    }
-    p.y=ny;
-    p.anim += Math.abs(p.vx)*dt*2.4;
-    p.land=Math.max(0,p.land-dt);
-
-    // ---- 낙사
-    if(p.y>H+1.5){ this.caught('추락'); return; }
-
-    // ---- 타일 상호작용: 몸이 겹치는 모든 타일을 본다
-    //     (한두 점만 검사하면 문 위로 뛰어넘을 때 출구를 못 밟는 문제가 생긴다)
-    const bx0=Math.floor(p.x-p.w/2), bx1=Math.floor(p.x+p.w/2);
-    const by0=Math.floor(p.y-p.h),   by1=Math.floor(p.y-0.001);
-    for(let y=by0;y<=by1;y++) for(let x=bx0;x<=bx1;x++){
-      const c=this.at(x,y);
-      if(c==='K'){ L.grid[y][x]='.'; this.keys++; buzz([20,30,20]); this.hint('열쇠 획득 — 철문으로'); }
-      else if(c==='^'){ this.caught('철조망'); return; }
-      else if(c==='E'){ this.clear(); return; }
-    }
-    if(p.onG && this.at(Math.floor(p.x), Math.floor(p.y))==='^'){ this.caught('철조망'); return; }
-
-    // ---- 간수
-    for(const q of this.guards){
-      const seen=this.sees(q);
-      if(seen) q.alert=2.2;
-      else q.alert=Math.max(0,q.alert-dt);
-      const sp = q.alert>0 ? q.sp*D.chase : q.sp;
-      if(q.alert>0){
-        q.dir = Math.sign(p.x-q.x)||q.dir;
-        q.x += q.dir*sp*dt;                       // 추격 (구역 밖으로도 쫓아온다)
-        q.x = clamp(q.x, q.x0-4, q.x1+4);
-      }else{
-        q.x += q.dir*sp*dt;
-        if(q.x<q.x0){ q.x=q.x0; q.dir=1; }
-        if(q.x>q.x1){ q.x=q.x1; q.dir=-1; }
-      }
-      if(this.inv<=0 && Math.abs(q.x-p.x)<0.75 && Math.abs(q.y-p.y)<1.5){ this.caught('붙잡혔다'); return; }
-    }
-
-    // ---- 서치라이트: 닿는 즉시가 아니라 잠시 버틸 시간을 준다
-    let inLight=false;
-    for(const l of this.lights){
-      l.x += l.dir*l.sp*dt;
-      if(l.x<l.x0){ l.x=l.x0; l.dir=1; }
-      if(l.x>l.x1){ l.x=l.x1; l.dir=-1; }
-      const dx=p.x-l.x, dy=(p.y-0.8)-l.y;
-      if(dx*dx/(l.r*l.r) + dy*dy/(3.2*3.2) < 1) inLight=true;
-    }
-    if(inLight && this.inv<=0){
-      this.lit += dt;
-      this.flash=Math.max(this.flash, 0.25);
-      if(this.lit>D.grace){ this.caught('서치라이트'); return; }
-    }else this.lit=Math.max(0, this.lit-dt*1.5);
-
-    // ---- 체크포인트
-    for(const c2 of this.L.checks){
-      if(Math.abs(p.x-c2[0])<0.8 && Math.abs(p.y-c2[1])<1.2 &&
-         (this.spawn[0]!==c2[0]||this.spawn[1]!==c2[1])){
-        this.spawn=c2.slice(); this.hint('중간 지점 통과');
-      }
-    }
-
-    // ---- 카메라 / 이펙트
-    this.camx += ((p.x-this.vw/this.cell/2) - this.camx) * Math.min(1, dt*7);
-    this.camx = clamp(this.camx, 0, Math.max(0, L.w - this.vw/this.cell));
-    const viewY=this.vh/this.cell;
-    this.camy = viewY>=H ? -(viewY-H)/2                       // 층 전체가 들어오면 세로 중앙 정렬
-                         : clamp(p.y-viewY*0.55, 0, H-viewY); // 아니면 캐릭터를 따라간다
-    this.shake=Math.max(0,this.shake-dt*3);
-    this.flash=Math.max(0,this.flash-dt*2.2);
-    this.parts=this.parts.filter(q=>{ q.t-=dt; q.x+=q.vx*dt; q.y+=q.vy*dt; q.vy+=28*dt; return q.t>0; });
-
-    this.hudUpdate();
-    this.draw();
-  },
-
-  openDoor(x,y){
-    // 같은 열의 D 전체를 연다
-    for(let yy=0;yy<H;yy++) if(this.L.grid[yy][x]==='D') this.L.grid[yy][x]='.';
-    this.keys--; buzz([30,40,30]); this.hint('철문 개방');
-  },
-
-  /* 간수 시야: 바라보는 방향 직선, 벽에 막힌다 */
-  sees(q){
-    const p=this.p;
-    if(Math.abs(p.y-q.y)>1.6) return false;              // 층이 다르면 못 본다
-    const dx=p.x-q.x;
-    if(Math.sign(dx)!==q.dir || Math.abs(dx)>q.look) return false;
-    if(p.crouch && Math.abs(dx)>q.look*0.55) return false; // 웅크리면 멀리서는 안 보인다
-    const step=Math.sign(dx);
-    for(let x=Math.floor(q.x)+step; x!==Math.floor(p.x); x+=step){
-      if(this.solidAt(x, Math.floor(q.y-0.5))) return false;
-    }
-    return true;
-  },
-
-  dust(x,y,n){
-    for(let i=0;i<n;i++) this.parts.push({x, y, vx:(Math.random()-0.5)*4, vy:-Math.random()*4, t:0.35+Math.random()*0.2});
-  },
-
-  caught(why){
-    if(this.done) return;
-    this.dead++; this.totalDead++;
-    this.shake=1; this.flash=1;
-    buzz([70,50,70]);
-    this.hint(why+' — 중간 지점에서 다시');
-    this.respawn();
-    this.hudUpdate();
-  },
-
-  clear(){
-    this.done=true;
-    this.totalTime+=this.t;
-    buzz([25,40,25,40,110]);
-    const last=this.lv+1>=LEVELS.length;
-    $('#ovc-h').textContent = last ? '담장을 넘었다' : this.L.name+' 돌파';
-    $('#ovc-p').textContent = Math.round(this.t)+'초 · 체포 '+this.dead+'회';
-    $('#btn-next').textContent = last ? '결과 보기' : '다음 구역';
-    $('#ov-clear').classList.add('show');
+    const d=Save.load();
+    if((d.reached||0) < this.idx+1) Save.patch({reached:this.idx+1});
   },
 
   next(){
-    if(this.lv+1>=LEVELS.length){ this.ending(); return; }
-    this.load(this.lv+1);
+    this.idx++;
+    if(this.idx>=STAGES.length){ this.ending(); return; }
+    this.brief();
   },
 
   ending(){
-    const t=Math.round(this.totalTime), d=this.totalDead;
-    const grade = d===0 ? 'S · 무결점' : d<=3 ? 'A · 능숙' : d<=8 ? 'B · 거칠게' : 'C · 몸으로';
-    $('#e-p').innerHTML='다섯 구역, '+t+'초. 담장을 넘어 숲을 내려가자 국도변에 <b>시동이 걸린 채 서 있는 차</b> 한 대.<br>'+
-                        '등 뒤에서 사이렌이 울린다. 이번엔 발이 아니라 <b>바퀴</b>로 도망칠 차례다.';
-    $('#e-t').innerHTML=
-      '<div class="tr">총 시간<b>'+t+'초</b></div>'+
-      '<div class="tr">체포<b>'+d+'회</b></div>'+
-      '<div class="tr">난이도<b>'+this.D.name+'</b></div>'+
-      '<div class="tr">등급<b>'+grade+'</b></div>';
+    this.unmount();
+    Sfx.blocked=false;
+    [0,1,2].forEach(i=>Sfx.tone([392,523,784][i],0.6,{g:0.1,delay:i*0.18}));
+    const total=(now()-this.runStart)/1000;
+    const grade = this.alarm<20 ? 'S · 유령처럼' : this.alarm<50 ? 'A · 능숙하게' : this.alarm<80 ? 'B · 간신히' : 'C · 개싸움으로';
+    $('#end-story').innerHTML =
+      '철조망 너머, 새벽 안개 속으로 들어섰다.<br>'+
+      '숲을 300m 내려가자 국도변 갓길에 <b>시동이 걸린 채 서 있는 차</b> 한 대.<br>'+
+      '등 뒤에서 사이렌이 울린다. 이번엔 발이 아니라 <b>바퀴</b>로 도망칠 차례다.<br><br>'+
+      '총 시간 <b>'+fmtSec(total)+'</b> · 최종 경보 <b>'+Math.round(this.alarm)+'%</b><br>등급 <b>'+grade+'</b>';
 
-    /* ---- 2부(도로 추격)로 넘길 인계 기록 ---- */
-    const c = Handoff.build(t, d, grade, this.D.name);
-    Handoff.save(c);
-    $('#e-carry').innerHTML=
-      '<div class="tr" style="opacity:.65">2부로 인계<b>—</b></div>'+
-      '<div class="tr">추격까지 여유<b>'+c.copDelay+'초</b></div>'+
-      '<div class="tr">연막탄 / 부스터<b>'+c.smoke+'개 / '+c.boost+'%</b></div>'+
-      '<div class="tr">탈옥 보너스<b>+'+c.bonus.toLocaleString()+'</b></div>'+
-      (c.startCapture ? '<div class="tr" style="color:#ff8080">수배 확산<b>체포 게이지 '+c.startCapture+'%로 시작</b></div>' : '');
-    this.screen('sc-end');
-  },
+    /* ---- 2부로 넘길 인계 기록 ---- */
+    const carry = Handoff.build(this.alarm, total, grade, this.times);
+    Handoff.save(carry);
+    $('#end-carry').hidden = false;
+    $('#end-carry').innerHTML =
+      '<b>2부로 인계되는 것</b><br>'+
+      '· 추격까지 여유 <b>'+carry.copDelay+'초</b> (경보가 낮을수록 늦게 붙는다)<br>'+
+      '· 챙겨 나온 연막탄 <b>'+carry.smoke+'개</b> · 부스터 <b>'+carry.boost+'%</b><br>'+
+      '· 탈옥 보너스 점수 <b>+'+carry.bonus.toLocaleString()+'</b>'+
+      (carry.startCapture ? '<br>· <span style="color:var(--red)">경보가 높아 수배가 이미 퍼졌다 — 체포 게이지 '+carry.startCapture+'%로 시작</span>' : '');
 
-  hudUpdate(){
-    $('#h-right').innerHTML='<span class="k">열쇠 '+this.keys+'</span> · 체포 '+this.dead+
-                            '<br>'+Math.round(this.t)+'초';
-  },
+    // 관문별 기록
+    $('#end-times').innerHTML = STAGES.map((s,i)=>{
+      const t=this.times[i];
+      return '<div class="diag-row"><span class="st">'+(i+1)+'</span><span class="nm">'+s.name+
+             '</span><span class="vl">'+(t?t.toFixed(1)+'초':'—')+'</span></div>';
+    }).join('');
 
-  /* ================= 렌더 ================= */
-  draw(){
-    const g=this.g, C=this.cell, L=this.L;
-    const sx=(this.shake>0? (Math.random()-0.5)*this.shake*7 : 0);
-    const sy=(this.shake>0? (Math.random()-0.5)*this.shake*7 : 0);
-    const X=x=>(x-this.camx)*C+sx, Y=y=>(y-this.camy)*C+sy;
-
-    g.clearRect(0,0,this.vw,this.vh);
-    const bg=g.createLinearGradient(0,0,0,this.vh);
-    bg.addColorStop(0,'#141b25'); bg.addColorStop(1,'#0a0d12');
-    g.fillStyle=bg; g.fillRect(0,0,this.vw,this.vh);
-
-    // 배경 창살 실루엣
-    g.strokeStyle='rgba(80,100,120,.10)'; g.lineWidth=3;
-    for(let i=0;i<40;i++){ const x=X(i*2.5 - (this.camx*0.25));
-      if(x<-10||x>this.vw+10) continue;
-      g.beginPath(); g.moveTo(x,0); g.lineTo(x,this.vh); g.stroke(); }
-
-    // 서치라이트 (바닥 빛)
-    for(const l of this.lights){
-      const gx=X(l.x), gy=Y(l.y+0.5);
-      const rg=g.createRadialGradient(gx,gy,0,gx,gy,l.r*C*1.6);
-      rg.addColorStop(0,'rgba(255,232,170,.42)'); rg.addColorStop(1,'rgba(255,232,170,0)');
-      g.fillStyle=rg; g.beginPath(); g.ellipse(gx,gy,l.r*C*1.6,3.2*C,0,0,7); g.fill();
-    }
-
-    // 타일
-    const x0=Math.max(0,Math.floor(this.camx)-1), x1=Math.min(L.w-1, Math.ceil(this.camx+this.vw/C)+1);
-    for(let y=0;y<H;y++) for(let x=x0;x<=x1;x++){
-      const c=L.grid[y][x]; if(c==='.') continue;
-      const px=X(x), py=Y(y), s=C+1;
-      if(c==='#'){
-        g.fillStyle='#232c38'; g.fillRect(px,py,s,s);
-        g.fillStyle='rgba(255,255,255,.045)'; g.fillRect(px,py,s,2);
-        g.strokeStyle='rgba(0,0,0,.35)'; g.lineWidth=1; g.strokeRect(px+.5,py+.5,s-1,s-1);
-      }
-      else if(c==='='){ g.fillStyle='#3a4655'; g.fillRect(px,py,s,C*0.28);
-                        g.fillStyle='rgba(255,255,255,.06)'; g.fillRect(px,py,s,2); }
-      else if(c==='L'){ g.strokeStyle='#7d8ea0'; g.lineWidth=2;
-        g.beginPath(); g.moveTo(px+C*0.28,py); g.lineTo(px+C*0.28,py+C);
-        g.moveTo(px+C*0.72,py); g.lineTo(px+C*0.72,py+C); g.stroke();
-        for(let k=0;k<3;k++){ const yy=py+C*(0.2+k*0.3);
-          g.beginPath(); g.moveTo(px+C*0.28,yy); g.lineTo(px+C*0.72,yy); g.stroke(); } }
-      else if(c==='^'){ g.strokeStyle='#8fa0b2'; g.lineWidth=2;
-        g.beginPath(); g.moveTo(px,py+C); g.lineTo(px+C*0.5,py+C*0.35); g.lineTo(px+C,py+C); g.stroke();
-        g.strokeStyle='rgba(255,66,87,.5)'; g.beginPath(); g.moveTo(px+C*0.2,py+C*0.6); g.lineTo(px+C*0.8,py+C*0.6); g.stroke(); }
-      else if(c==='D'){ g.fillStyle='#4a3a24'; g.fillRect(px,py,s,s);
-        g.strokeStyle='#8a6a3a'; g.lineWidth=2; g.strokeRect(px+2.5,py+2.5,s-5,s-5);
-        g.fillStyle='#c9a25a'; g.beginPath(); g.arc(px+C*0.72,py+C*0.5,C*0.07,0,7); g.fill(); }
-      else if(c==='K'){ g.strokeStyle='#ffd9a0'; g.lineWidth=2.4;
-        g.beginPath(); g.arc(px+C*0.38,py+C*0.5,C*0.16,0,7); g.stroke();
-        g.beginPath(); g.moveTo(px+C*0.52,py+C*0.5); g.lineTo(px+C*0.82,py+C*0.5);
-        g.moveTo(px+C*0.72,py+C*0.5); g.lineTo(px+C*0.72,py+C*0.66); g.stroke(); }
-      else if(c==='E'){ g.fillStyle='rgba(91,224,138,.16)'; g.fillRect(px,py-C,s,C*2);
-        g.strokeStyle='#5be08a'; g.lineWidth=2; g.strokeRect(px+2,py-C+2,s-4,C*2-4);
-        g.fillStyle='#5be08a'; g.font='700 '+(C*0.42)+'px sans-serif'; g.textAlign='center';
-        g.fillText('EXIT', px+C/2, py+C*0.62); }
-    }
-
-    // 먼지
-    g.fillStyle='rgba(200,215,230,.5)';
-    this.parts.forEach(q=>{ const r=Math.max(1,C*0.06*q.t*3); g.beginPath(); g.arc(X(q.x),Y(q.y),r,0,7); g.fill(); });
-
-    // 간수
-    for(const q of this.guards) this.drawGuard(X,Y,C,q);
-    // 나
-    this.drawMe(X,Y,C);
-
-    // 조명 비네트
-    const vg=g.createRadialGradient(this.vw/2,this.vh/2,this.vh*0.25,this.vw/2,this.vh/2,this.vh*0.95);
-    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.55)');
-    g.fillStyle=vg; g.fillRect(0,0,this.vw,this.vh);
-    if(this.flash>0){ g.fillStyle='rgba(255,66,87,'+(this.flash*0.35)+')'; g.fillRect(0,0,this.vw,this.vh); }
-  },
-
-  drawGuard(X,Y,C,q){
-    const g=this.g, px=X(q.x), py=Y(q.y);
-    // 손전등 원뿔
-    const len=q.look*C, spread=C*1.1;
-    const grad=g.createLinearGradient(px,py,px+q.dir*len,py);
-    const hot = q.alert>0;
-    grad.addColorStop(0, hot?'rgba(255,120,120,.34)':'rgba(255,226,160,.26)');
-    grad.addColorStop(1,'rgba(255,226,160,0)');
-    g.fillStyle=grad;
-    g.beginPath();
-    g.moveTo(px, py-C*0.8);
-    g.lineTo(px+q.dir*len, py-C*0.8-spread);
-    g.lineTo(px+q.dir*len, py-C*0.8+spread);
-    g.closePath(); g.fill();
-    // 몸
-    const bw=C*0.62, bh=C*1.5;
-    g.fillStyle=hot?'#5a2530':'#26313f';
-    g.fillRect(px-bw/2, py-bh, bw, bh*0.66);
-    g.fillStyle='#1b2430'; g.fillRect(px-bw/2, py-bh*0.34, bw, bh*0.34);
-    g.fillStyle='#d8c39a'; g.beginPath(); g.arc(px, py-bh-C*0.14, C*0.24, 0, 7); g.fill();
-    g.fillStyle=hot?'#ff4257':'#3d4c5e';                       // 모자
-    g.fillRect(px-C*0.28, py-bh-C*0.42, C*0.56, C*0.18);
-    g.fillRect(px+(q.dir>0?C*0.16:-C*0.44), py-bh-C*0.3, C*0.28, C*0.08);
-  },
-
-  drawMe(X,Y,C){
-    const g=this.g, p=this.p, px=X(p.x), py=Y(p.y);
-    // 무적 동안 깜빡임
-    g.save();
-    if(this.inv>0) g.globalAlpha = 0.35+0.65*Math.abs(Math.sin(this.inv*22));
-    const run=Math.abs(p.vx)>0.6 && p.onG;
-    const ph=Math.sin(p.anim*3.1);
-    const sq = p.land>0 ? 1+p.land*0.9 : 1;
-    const bh = (p.crouch? C*0.95 : C*1.5)/sq, bw=(C*0.6)*sq;
-
-    // 다리
-    g.strokeStyle='#20262e'; g.lineWidth=Math.max(2,C*0.11); g.lineCap='round';
-    const legY=py, hipY=py-bh*0.42;
-    if(!p.onG){
-      g.beginPath(); g.moveTo(px-C*0.05,hipY); g.lineTo(px-C*0.22*p.face, legY-C*0.22);
-      g.moveTo(px+C*0.05,hipY); g.lineTo(px+C*0.16*p.face, legY-C*0.05); g.stroke();
-    }else if(run){
-      g.beginPath(); g.moveTo(px,hipY); g.lineTo(px+ph*C*0.3, legY);
-      g.moveTo(px,hipY); g.lineTo(px-ph*C*0.3, legY); g.stroke();
+    // 최고 기록 저장 (경보 낮은 순 → 시간 빠른 순)
+    const d=Save.load();
+    const better = !d.best || this.alarm < d.best.alarm ||
+                   (this.alarm === d.best.alarm && total < d.best.total);
+    if(better){
+      Save.patch({best:{alarm:Math.round(this.alarm), total:+total.toFixed(1), grade}, reached:STAGES.length});
+      toast('새 기록!','good');
     }else{
-      g.beginPath(); g.moveTo(px-C*0.1,hipY); g.lineTo(px-C*0.1,legY);
-      g.moveTo(px+C*0.1,hipY); g.lineTo(px+C*0.1,legY); g.stroke();
+      Save.patch({reached:STAGES.length});
     }
-    // 몸통 (죄수복 줄무늬)
-    g.fillStyle='#f0e2c8'; g.fillRect(px-bw/2, py-bh, bw, bh*0.62);
-    g.fillStyle='#c9723a';
-    for(let i=0;i<4;i++) g.fillRect(px-bw/2, py-bh+bh*0.09*(i*1.6+0.4), bw, bh*0.075);
-    // 팔
-    g.strokeStyle='#e6d6bb'; g.lineWidth=Math.max(2,C*0.1);
-    const shY=py-bh*0.86;
-    if(p.climb){ g.beginPath(); g.moveTo(px,shY); g.lineTo(px-C*0.05, shY-C*0.4);
-                 g.moveTo(px,shY); g.lineTo(px+C*0.05, shY-C*0.4); g.stroke(); }
-    else if(!p.onG){ g.beginPath(); g.moveTo(px,shY); g.lineTo(px+p.face*C*0.3, shY-C*0.22); g.stroke(); }
-    else { g.beginPath(); g.moveTo(px,shY); g.lineTo(px-ph*C*0.26, shY+C*0.3); g.stroke(); }
-    // 머리
-    g.fillStyle='#f4dcb6'; g.beginPath(); g.arc(px, py-bh-C*0.12, C*0.23, 0, 7); g.fill();
-    g.fillStyle='#2a2118'; g.fillRect(px+p.face*C*0.08, py-bh-C*0.17, C*0.07, C*0.06);
-    // 웅크림 표시
-    if(p.crouch){ g.strokeStyle='rgba(87,216,255,.5)'; g.lineWidth=1.5;
-      g.beginPath(); g.arc(px, py-bh*0.5, C*0.55, 0, 7); g.stroke(); }
-    g.restore();
-    // 서치라이트 노출 경고 게이지
-    if(this.lit>0){
-      const w=C*0.9, ratio=Math.min(1, this.lit/this.D.grace);
-      g.fillStyle='rgba(0,0,0,.5)'; g.fillRect(px-w/2, py-bh-C*0.6, w, C*0.12);
-      g.fillStyle= ratio>0.6?'#ff4257':'#ffd9a0';
-      g.fillRect(px-w/2, py-bh-C*0.6, w*ratio, C*0.12);
-    }
+    $('#hud').hidden=true;
+    this.screen('sc-end');
+    paintTitleRecord();
+  },
+
+  caught(){
+    this.unmount();
+    Sfx.blocked=false; Sfx.siren();
+    buzz([200,80,200,80,400]);
+    $('#ca-story').innerHTML =
+      '경보가 100%에 도달했다. 간수들이 당신을 독방으로 끌고 간다.<br>'+
+      '…하지만 <b>'+STAGES[this.idx].name+'</b>까지의 길은 이미 알고 있다.';
+    this.screen('sc-caught');
+  },
+
+  /* 붙잡힌 관문부터 재시도 */
+  resume(){
+    this.setAlarm(50);
+    $('#hud').hidden=false;
+    this.brief();
   }
 };
 
-/* ---- 루프 ---- */
+/* 메인 루프 */
 let last=0;
 function frame(t){
-  const dt=last?Math.min(0.033,(t-last)/1000):0; last=t;
-  if($('#sc-play').classList.contains('show')) G.update(dt);
+  const dt = last ? Math.min(0.05,(t-last)/1000) : 0;
+  last=t;
+  if(Game.stage && Game.stage.update){
+    try{ Game.stage.update(dt); }catch(e){ console.error(e); }
+    // 45초 넘으면 우회(건너뛰기) 허용
+    if(now()-Game.t0>45000 && $('#stg-skip').hidden) $('#stg-skip').hidden=false;
+  }
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 
-/* ---- 입력 ---- */
-G.init();
-document.querySelectorAll('.pad button[data-k]').forEach(b=>{
-  const k=b.dataset.k;
-  const on=e=>{ e.preventDefault(); K[k]=true; };
-  const off=e=>{ e.preventDefault(); K[k]=false; };
-  b.addEventListener('pointerdown',on);
-  b.addEventListener('pointerup',off);
-  b.addEventListener('pointercancel',off);
-  b.addEventListener('pointerleave',off);
-});
-const KMAP={arrowleft:'left',a:'left',arrowright:'right',d:'right',arrowup:'up',w:'up',
-            arrowdown:'down',s:'down',' ':'jump',z:'jump',x:'jump'};
-addEventListener('keydown',e=>{ const k=KMAP[e.key.toLowerCase()]; if(k){ e.preventDefault(); K[k]=true; } });
-addEventListener('keyup',  e=>{ const k=KMAP[e.key.toLowerCase()]; if(k){ e.preventDefault(); K[k]=false; } });
+/* =======================================================================
+   STAGE 1 — 감방 자물쇠 : 가속도(흔들기)
+======================================================================= */
+const S1 = {
+  name:'감방 자물쇠', feat:'가속도 센서',
+  story:'소등 20분 후. 녹슨 자물쇠는 오래됐고, 나사는 이미 헐거워졌다.<br><b>휴대폰을 쥔 손으로 창살을 흔들어</b> 자물쇠를 부숴라.',
+  clear:'쇠가 비명을 지르며 부러졌다. 복도의 냉기가 얼굴에 닿는다.',
+  mount(host, api){
+    const shake=ShakeInput(host,'창살\n두드리기');
+    const wrap=document.createElement('div'); wrap.className='big';
+    wrap.innerHTML=`
+      <div class="glyph" id="s1-lock">🔒</div>
+      <div class="caption" id="s1-cap">—</div>
+      <div class="meter"><div class="bar"><div class="bar-fill" id="s1-pow"></div></div></div>`;
+    host.appendChild(wrap);
+    const lock=$('#s1-lock',wrap), cap=$('#s1-cap',wrap), pow=$('#s1-pow',wrap);
+    let energy=0, lastBuzz=0, cracked=0;
 
-$('#diff-opts').addEventListener('click', e=>{
-  const b=e.target.closest('.opt'); if(!b) return;
-  G.diff=b.dataset.d; G.D=DIFF[G.diff];
-  document.querySelectorAll('#diff-opts .opt').forEach(o=>o.classList.toggle('on', o===b));
-});
-$('#btn-start').onclick=()=>G.begin();
-$('#btn-keys').onclick=()=>alert('←→ 이동 · 스페이스/Z 점프(길게 누르면 높이) · ↓ 웅크리기 · ↑ 사다리');
-$('#btn-next').onclick=()=>G.next();
-$('#btn-again').onclick=()=>G.screen('sc-title');
+    api.status('자물쇠 내구도 100%');
+    api.hint('휴대폰을 위아래로 세게 흔들어라. 손목만 쓰면 안 된다.');
+
+    return {
+      update(dt){
+        const lv=shake.poll(dt);
+        pow.style.width=(lv*100)+'%';
+        energy = clamp(energy + lv*lv*dt*0.5 - dt*0.06, 0, 1);
+        api.progress(energy);
+        api.status('자물쇠 내구도 '+Math.round(100-energy*100)+'%');
+
+        const sh = lv*7;
+        lock.style.transform = `translate(${rand(-sh,sh)}px,${rand(-sh,sh)}px) rotate(${rand(-sh,sh)}deg)`;
+        if(energy>0.35 && cracked<1){ cracked=1; lock.textContent='🔓'; toast('나사가 하나 빠졌다'); }
+        if(lv>0.45 && now()-lastBuzz>140){ lastBuzz=now(); buzz(18); Sfx.clang(); }
+
+        cap.textContent = lv>0.5 ? '쿵! 쿵!' : lv>0.2 ? '덜컹…' : shake.usingSensor ? '더 세게 흔들어라' : '더 빠르게 두드려라';
+
+        if(energy>=1) api.done();
+      },
+      destroy(){ shake.dispose(); }
+    };
+  }
+};
+
+/* =======================================================================
+   STAGE 2 — 복도 : 기울기(자이로)로 열쇠 굴리기
+======================================================================= */
+const S2 = {
+  name:'순찰 복도', feat:'기울기 센서',
+  story:'간수실 열쇠가 복도 끝 바닥에 떨어져 있다. 하지만 서치라이트가 복도를 쓸고 지나간다.<br><b>휴대폰을 기울여</b> 열쇠까지 굴러가고, 다시 문으로 돌아와라.',
+  clear:'열쇠를 손에 넣고 철문을 열었다. 아무도 눈치채지 못했다.',
+  mount(host, api){
+    const cv=makeCanvas(host);
+    const tilt=TiltInput(host); tilt.calibrate();
+
+    const P={x:0.5,y:0.9,vx:0,vy:0,r:9};
+    let phase=0;                      // 0:열쇠로 1:문으로
+    let beams=[
+      {axis:'y', p:0.25, dir:1, sp:0.15, w:0.085},
+      {axis:'x', p:0.60, dir:-1, sp:0.12, w:0.075},
+    ];
+    const blocks=[
+      {x:0.00,y:0.30,w:0.55,h:0.06},
+      {x:0.45,y:0.55,w:0.55,h:0.06},
+      {x:0.20,y:0.70,w:0.30,h:0.06},
+      {x:0.70,y:0.14,w:0.30,h:0.06},
+    ];
+    const KEY={x:0.12,y:0.10}, DOOR={x:0.86,y:0.93};
+    let cool=0;
+
+    api.status('열쇠를 찾아라');
+    api.hint(Sensors.hasOrient()
+      ? '지금 자세가 수평 기준이다. 폰을 살짝 기울여 굴려라.'
+      : '기울기 센서가 없다 → 화면을 드래그해서 굴려라.');
+
+    function boxes(){ return blocks.map(b=>({x:b.x*cv.w,y:b.y*cv.h,w:b.w*cv.w,h:b.h*cv.h})); }
+
+    return {
+      update(dt){
+        const t=tilt.get();
+        // 물리
+        P.vx += t.x*0.95*dt*cv.w*0.55;
+        P.vy += t.y*0.95*dt*cv.h*0.55;
+        const damp=Math.pow(0.22, dt);                  // 마찰
+        P.vx*=damp; P.vy*=damp;
+        let px=P.x*cv.w + P.vx*dt, py=P.y*cv.h + P.vy*dt;
+
+        // 벽
+        if(px<P.r){px=P.r;P.vx*=-0.4} if(px>cv.w-P.r){px=cv.w-P.r;P.vx*=-0.4}
+        if(py<P.r){py=P.r;P.vy*=-0.4} if(py>cv.h-P.r){py=cv.h-P.r;P.vy*=-0.4}
+
+        // 장애물
+        for(const b of boxes()){
+          if(px+P.r>b.x && px-P.r<b.x+b.w && py+P.r>b.y && py-P.r<b.y+b.h){
+            const ox=Math.min(px+P.r-b.x, b.x+b.w-(px-P.r));
+            const oy=Math.min(py+P.r-b.y, b.y+b.h-(py-P.r));
+            if(ox<oy){ px += (px < b.x+b.w/2) ? -ox : ox; P.vx*=-0.35; }
+            else     { py += (py < b.y+b.h/2) ? -oy : oy; P.vy*=-0.35; }
+          }
+        }
+        P.x=px/cv.w; P.y=py/cv.h;
+
+        // 서치라이트
+        cool=Math.max(0,cool-dt);
+        for(const b of beams){
+          b.p += b.dir*b.sp*dt;
+          if(b.p<0.05){b.p=0.05;b.dir=1} if(b.p>0.95){b.p=0.95;b.dir=-1}
+          const v = b.axis==='y' ? P.y : P.x;
+          if(Math.abs(v-b.p)<b.w/2 && cool<=0){
+            cool=1.8;                                  // 1.8초간 무적 + 튕겨나감
+            api.hit('빛에 걸렸다!', 5);
+            if(b.axis==='y') P.vy = (P.y<b.p?-1:1)*cv.h*0.35;
+            else             P.vx = (P.x<b.p?-1:1)*cv.w*0.35;
+          }
+        }
+
+        // 목표
+        const tgt = phase===0 ? KEY : DOOR;
+        if(Math.hypot(P.x-tgt.x, P.y-tgt.y)<0.06){
+          if(phase===0){ phase=1; buzz([30,40,30]); Sfx.pickup(); toast('열쇠 획득','good'); api.status('철문으로 돌아가라'); }
+          else { api.done(); return; }
+        }
+        api.progress(phase===0 ? 0.45*(1-clamp(Math.hypot(P.x-KEY.x,P.y-KEY.y)/1.1,0,1)) + 0.05
+                               : 0.5 + 0.5*(1-clamp(Math.hypot(P.x-DOOR.x,P.y-DOOR.y)/1.1,0,1)));
+
+        // ---- 렌더
+        const g=cv.g, W=cv.w, H=cv.h;
+        g.clearRect(0,0,W,H);
+        g.fillStyle='#0d1116'; g.fillRect(0,0,W,H);
+        g.strokeStyle='#1b222a'; g.lineWidth=1;
+        for(let i=0;i<W;i+=26){ g.beginPath(); g.moveTo(i,0); g.lineTo(i,H); g.stroke(); }
+        for(let i=0;i<H;i+=26){ g.beginPath(); g.moveTo(0,i); g.lineTo(W,i); g.stroke(); }
+
+        for(const b of beams){
+          g.fillStyle='rgba(255,196,86,.13)';
+          if(b.axis==='y') g.fillRect(0,(b.p-b.w/2)*H, W, b.w*H);
+          else g.fillRect((b.p-b.w/2)*W, 0, b.w*W, H);
+        }
+
+        g.fillStyle='#20272f'; g.strokeStyle='#2e3741';
+        for(const b of boxes()){ g.fillRect(b.x,b.y,b.w,b.h); g.strokeRect(b.x,b.y,b.w,b.h); }
+
+        g.font='20px serif'; g.textAlign='center'; g.textBaseline='middle';
+        if(phase===0) g.fillText('🔑', KEY.x*W, KEY.y*H);
+        g.globalAlpha = phase===1?1:.35;
+        g.fillText('🚪', DOOR.x*W, DOOR.y*H);
+        g.globalAlpha=1;
+
+        g.beginPath(); g.arc(P.x*W,P.y*H,P.r,0,7);
+        g.fillStyle = cool>0 ? '#ff6b6b' : '#ffb340'; g.fill();
+        g.strokeStyle='rgba(255,255,255,.35)'; g.stroke();
+
+        if(!t.sensor){
+          g.fillStyle='rgba(139,152,166,.6)'; g.font='11px monospace'; g.textAlign='left';
+          g.fillText('drag mode', 8, 14);
+        }
+      },
+      destroy(){ tilt.dispose(); cv.dispose(); }
+    };
+  }
+};
+
+/* =======================================================================
+   STAGE 3 — 취침 점검 : 마이크
+======================================================================= */
+const S3 = {
+  name:'철계단 강하', feat:'마이크 + 가속도', silent:true,   // 스피커 소리가 마이크로 되돌아가지 않게
+  story:'복도 끝 철계단. 간수는 한 층 아래 층계참에 서 있고, 주기적으로 <b>위를 올려다본다</b>.<br>'+
+        '<b>폰을 아주 살짝 기울여 한 칸씩</b> 내려가라. 크게 움직이면 발소리가 울린다.<br>'+
+        '<b>간수가 올려다볼 때는 멈춰라.</b> 숨소리조차 내면 안 된다.',
+  clear:'스무 칸을 소리 없이 내려왔다. 간수는 끝까지 위를 올려다보지 않았다.',
+  mount(host, api){
+    const cv = makeCanvas(host);
+    const tilt = TiltInput(host); tilt.calibrate();
+
+    const STEPS = 20;          // 내려가야 할 계단 수
+    const SAFE  = 1.15;        // 이 속도(초당 칸)를 넘으면 발소리가 울린다
+    let step = 0, v = 0, susp = 0, noise = 0, stepSfx = 0;
+    let mic = null, dead = false, micOn = false;
+    let base = 0.004, calT = 0, calN = 0, calibrating = true;
+    let mode = 'calm', modeT = rand(2.6, 4.4), warned = false;
+
+    openMic().then(m => {
+      if(dead){ m.stop(); return; }
+      mic = m; micOn = true;
+      api.hint('폰을 아래로 아주 살짝 기울여 한 칸씩. 숨소리도 잡힌다.');
+    }).catch(() => {
+      if(dead) return;
+      calibrating = false;
+      api.hint('마이크를 쓸 수 없다 → 발소리(속도)만으로 판정한다. 화면을 아래로 끌어 내려가라.');
+    });
+
+    api.status('계단 0 / ' + STEPS);
+    api.hint('마이크 권한을 허용하면 실제 소리로 플레이한다.');
+
+    return {
+      update(dt){
+        /* ---- 주변 소음 보정 ---- */
+        if(mic && calibrating){
+          const l = mic.level();
+          calT += dt; base = (base*calN + l)/(calN+1); calN++;
+          if(calT > 1.2) calibrating = false;
+          api.status('주변 소음 측정 중…  기준 ' + (base*1000).toFixed(1));
+          return;
+        }
+        const quietTh = Math.max(0.014, base*3.4);
+
+        /* ---- 내려가기: 기울인 만큼 천천히 ---- */
+        const t = tilt.get();
+        const push = clamp(t.y, 0, 1);                 // 아래로 기울인 정도(센서 없으면 아래로 드래그)
+        v = lerp(v, push*3.2, 1 - Math.pow(0.03, dt));
+        if(v < 0.02) v = 0;
+        step = Math.min(STEPS, step + v*dt);
+
+        /* ---- 소리: 너무 빨리 내려가면 발소리, 마이크가 있으면 실제 소음도 ---- */
+        const foot = Math.max(0, v - SAFE) * 0.55;
+        const mikeLv = mic ? mic.level() : 0;
+        const breath = mic ? Math.max(0, mikeLv - quietTh) * 9 : 0;
+        noise = clamp(foot + breath, 0, 1.5);
+
+        /* ---- 간수: 조용히 있다가 주기적으로 위를 올려다본다 ---- */
+        modeT -= dt;
+        if(modeT <= 0){
+          if(mode === 'calm'){ mode = 'turn'; modeT = 0.85; buzz([12,40,12]); warned = true; }
+          else if(mode === 'turn'){ mode = 'look'; modeT = 1.4 + rand(0, 0.9); }
+          else { mode = 'calm'; modeT = rand(2.4, 4.2); warned = false; }
+        }
+
+        /* ---- 의심도 ---- */
+        if(mode === 'look'){
+          const moving = v > 0.12;
+          if(moving || noise > 0.12) susp = clamp(susp + (moving?70:45)*dt, 0, 100);
+          else susp = clamp(susp - 26*dt, 0, 100);
+        } else {
+          if(noise > 0.05) susp = clamp(susp + noise*46*dt, 0, 100);
+          else susp = clamp(susp - 14*dt, 0, 100);
+        }
+
+        if(susp >= 100){
+          api.hit('간수가 계단 위를 비췄다!', 12);
+          susp = 30; step = Math.max(0, step - 3); v = 0;
+        }
+
+        /* ---- 발소리 진동 ---- */
+        stepSfx += v*dt;
+        if(stepSfx > 1){ stepSfx = 0; if(v > SAFE) buzz(18); }
+
+        api.progress(step/STEPS);
+        api.status('계단 ' + Math.floor(step) + ' / ' + STEPS +
+                   '   |   속도 ' + v.toFixed(2) + (v>SAFE?' (너무 빠르다)':'') +
+                   '   |   의심 ' + Math.round(susp) + '%');
+        if(step >= STEPS){ api.done(); return; }
+
+        /* ================= 렌더 ================= */
+        const g = cv.g, W = cv.w, H = cv.h;
+        g.clearRect(0,0,W,H);
+        const bg = g.createLinearGradient(0,0,0,H);
+        bg.addColorStop(0,'#0f141a'); bg.addColorStop(1,'#080b0e');
+        g.fillStyle = bg; g.fillRect(0,0,W,H);
+
+        const top = 34, bottom = H - 58, span = bottom - top;
+        // 계단
+        for(let i=0;i<=STEPS;i++){
+          const y = top + span*(i/STEPS);
+          const done = i <= step;
+          const w = W*0.52, x = (W-w)/2 + (i%2 ? 6 : -6);
+          g.fillStyle = done ? 'rgba(255,179,64,.16)' : 'rgba(139,152,166,.10)';
+          g.fillRect(x, y-3, w, 6);
+          g.fillStyle = done ? 'rgba(255,179,64,.5)' : 'rgba(139,152,166,.28)';
+          g.fillRect(x, y-3, w, 1.5);
+        }
+
+        // 간수 (아래 층계참)
+        const looking = mode === 'look';
+        if(looking){
+          const cone = g.createLinearGradient(0, bottom+10, 0, top);
+          cone.addColorStop(0,'rgba(255,196,86,.22)'); cone.addColorStop(1,'rgba(255,196,86,0)');
+          g.fillStyle = cone;
+          g.beginPath(); g.moveTo(W/2-26, bottom+16); g.lineTo(W/2+26, bottom+16);
+          g.lineTo(W/2+W*0.42, top); g.lineTo(W/2-W*0.42, top); g.fill();
+        }
+        g.font = '30px serif'; g.textAlign='center'; g.textBaseline='middle';
+        g.fillText(looking ? '👀' : '👮', W/2, bottom+26);
+
+        // 플레이어
+        const py = top + span*(step/STEPS);
+        g.beginPath(); g.arc(W/2, py-12, 9, 0, 7);
+        g.fillStyle = looking && v>0.12 ? '#ff6b6b' : (v>SAFE ? '#ffb340' : '#4ade80');
+        g.fill(); g.strokeStyle='rgba(255,255,255,.35)'; g.stroke();
+
+        // 속도 막대 (안전선 표시)
+        const bx = 14, by = top, bh = span;
+        g.fillStyle='#171d24'; g.fillRect(bx, by, 8, bh);
+        const vh = bh*clamp(v/3.2,0,1);
+        g.fillStyle = v>SAFE ? '#ff4d4d' : '#4ade80';
+        g.fillRect(bx, by+bh-vh, 8, vh);
+        const sy = by+bh-bh*(SAFE/3.2);
+        g.fillStyle='#ffb340'; g.fillRect(bx-3, sy-1, 14, 2);
+        g.font='9px monospace'; g.textAlign='left'; g.textBaseline='alphabetic';
+        g.fillStyle='rgba(139,152,166,.75)'; g.fillText('안전', bx+14, sy+3);
+
+        // 의심 막대
+        g.fillStyle='#171d24'; g.fillRect(W-22, by, 8, bh);
+        const sh = bh*(susp/100);
+        g.fillStyle = susp>70 ? '#ff4d4d' : susp>35 ? '#ffb340' : '#8b98a6';
+        g.fillRect(W-22, by+bh-sh, 8, sh);
+
+        // 상태 문구
+        g.textAlign='center'; g.font='12px system-ui'; g.fillStyle='#8b98a6';
+        g.fillText(looking ? '간수가 올려다본다 — 멈춰라'
+                   : mode==='turn' ? '고개를 드는 낌새…'
+                   : (v>SAFE ? '발소리가 울린다 — 천천히' : '지금이다. 천천히 내려가라'),
+                   W/2, 20);
+        if(micOn){
+          g.textAlign='right'; g.font='9px monospace'; g.fillStyle='rgba(139,152,166,.7)';
+          g.fillText('소음 '+(mikeLv*1000).toFixed(0)+' / 한계 '+(quietTh*1000).toFixed(0), W-26, 20);
+        }
+        if(!t.sensor){
+          g.textAlign='left'; g.font='9px monospace'; g.fillStyle='rgba(139,152,166,.6)';
+          g.fillText('drag mode', 8, 14);
+        }
+      },
+      destroy(){ dead = true; if(mic) mic.stop(); tilt.dispose(); cv.dispose(); }
+    };
+  }
+};
+
+/* =======================================================================
+   STAGE 4 — 환기구 창살 : 멀티터치
+======================================================================= */
+const S4 = {
+  name:'환기구 창살', feat:'멀티터치',
+  story:'세탁실 천장에 환기구가 있다. 창살은 세 개의 리벳으로 고정돼 있고, 하나씩 풀면 즉시 다시 잠긴다.<br><b>세 손가락으로 동시에</b> 눌러 한 번에 뜯어내라.',
+  clear:'창살이 통째로 떨어졌다. 좁고 먼지 낀 덕트가 아래로 이어진다.',
+  mount(host, api){
+    const multi = (navigator.maxTouchPoints||0) >= 3;
+    const layer=document.createElement('div'); layer.className='rivets'; host.appendChild(layer);
+    const cap=document.createElement('div');
+    cap.className='caption';
+    cap.style.cssText='position:absolute;left:0;right:0;top:12px;text-align:center';
+    host.appendChild(cap);
+
+    let round=0, hold=0, pads=[];
+    const NEED=3, ROUNDS=3, HOLD=1.4;
+
+    function layout(){
+      layer.innerHTML=''; pads=[];
+      const r=host.getBoundingClientRect();
+      const pts=[];
+      for(let i=0;i<NEED;i++){
+        let p, tries=0;
+        do{ p={x:rand(0.2,0.8), y:rand(0.25,0.82)}; tries++; }
+        while(tries<40 && pts.some(q=>Math.hypot((q.x-p.x)*r.width,(q.y-p.y)*r.height)<95));
+        pts.push(p);
+      }
+      pts.forEach((p,i)=>{
+        const el=document.createElement('div');
+        el.className='rivet'; el.textContent='리벳 '+(i+1);
+        el.style.left=(p.x*100)+'%'; el.style.top=(p.y*100)+'%';
+        const on=e=>{ e.preventDefault(); capture(el, e.pointerId);
+          el._on=true; el.classList.add('on'); buzz(12); };
+        const off=()=>{ if(multi){ el._on=false; el.classList.remove('on'); } };
+        el.addEventListener('pointerdown',on);
+        el.addEventListener('pointerup',off);
+        el.addEventListener('pointercancel',off);
+        el.addEventListener('pointerleave',off);
+        layer.appendChild(el); pads.push(el);
+      });
+      hold=0;
+    }
+    layout();
+
+    api.status('리벳 0 / 3 고정');
+    api.hint(multi ? '세 손가락을 동시에 올려 '+HOLD+'초간 유지해라.'
+                   : '멀티터치가 없다 → 리벳을 하나씩 눌러 고정(래치)한 뒤 유지된다.');
+
+    return {
+      update(dt){
+        const n=pads.filter(p=>p._on).length;
+        if(n>=NEED){
+          hold+=dt;
+          cap.textContent='끼익… 끼익…';
+          if(hold>0.3 && Math.random()<0.35){ buzz(10); Sfx.creak(); }
+        }else{
+          if(hold>0) cap.textContent='손을 떼면 다시 잠긴다!';
+          hold=Math.max(0, hold-dt*1.6);
+        }
+        api.status('리벳 '+n+' / 3 고정   |   비틀기 '+hold.toFixed(1)+'/'+HOLD+'초  ·  '+(round+1)+'단계/'+ROUNDS);
+        api.progress((round + clamp(hold/HOLD,0,1))/ROUNDS);
+
+        if(hold>=HOLD){
+          round++;
+          buzz([30,50,30]); Sfx.clunk();
+          if(round>=ROUNDS){ api.done(); return; }
+          toast('리벳 세트 '+round+' 제거','good');
+          layout();
+        }
+      },
+      destroy(){ layer.remove(); cap.remove(); }
+    };
+  }
+};
+
+/* =======================================================================
+   STAGE 5 — 지하 배수로 : 나침반(방위)
+======================================================================= */
+const S5 = {
+  name:'지하 배수로', feat:'나침반 / 방위 센서',
+  story:'덕트는 지하 배수로로 이어졌다. 손전등도, 지도도 없다. 오직 방향 감각만 남았다.<br><b>몸을 돌려</b> 지시된 방위를 향한 뒤 그대로 3초간 걸어라. 세 번 반복.',
+  clear:'물소리가 커진다. 배수로 출구의 쇠창살 틈으로 바깥 공기가 들어온다.',
+  mount(host, api){
+    const cv=makeCanvas(host);
+    const useSensor=()=>Sensors.hasHeading();
+    let virt=0, drag=false, ox=0, base=0;
+    const pad=document.createElement('div'); pad.className='tilt-pad'; host.appendChild(pad);
+    pad.addEventListener('pointerdown',e=>{capture(pad,e.pointerId);drag=true;ox=e.clientX;base=virt;});
+    pad.addEventListener('pointermove',e=>{ if(drag) virt=(base+(e.clientX-ox)*0.9+3600)%360; });
+    const up=()=>drag=false;
+    pad.addEventListener('pointerup',up); pad.addEventListener('pointercancel',up);
+
+    const NAMES=[[0,'북'],[45,'북동'],[90,'동'],[135,'남동'],[180,'남'],[225,'남서'],[270,'서'],[315,'북서']];
+    let leg=0, target=NAMES[Math.floor(rand(0,8))], onT=0, lastBuzz=0;
+    const LEGS=3, HOLD=3.0, TOL=15;
+
+    api.hint(useSensor() ? '휴대폰 윗변이 가리키는 방향이 진행 방향이다.'
+                          : '방위 센서가 없다 → 화면을 좌우로 드래그해 방향을 돌려라.');
+
+    function pickTarget(){
+      let t; do{ t=NAMES[Math.floor(rand(0,8))]; } while(t[0]===target[0]);
+      target=t; onT=0;
+    }
+
+    return {
+      update(dt){
+        const head = useSensor() ? Sensors.orient.heading : virt;
+        let diff = ((head - target[0] + 540) % 360) - 180;   // -180~180
+        const ad=Math.abs(diff);
+
+        if(ad<TOL){
+          onT+=dt;
+          if(now()-lastBuzz>420){ lastBuzz=now(); buzz(14); Sfx.step(); }
+        }else{
+          onT=Math.max(0,onT-dt*1.2);
+        }
+        api.status('목표 '+target[1]+' ('+target[0]+'°)   |   현재 '+Math.round(head)+'°   |   전진 '+onT.toFixed(1)+'/'+HOLD.toFixed(1)+'초');
+        api.progress((leg + clamp(onT/HOLD,0,1))/LEGS);
+
+        if(onT>=HOLD){
+          leg++;
+          buzz([30,60,30]);
+          if(leg>=LEGS){ api.done(); return; }
+          toast('갈림길 '+leg+' 통과 · 새 방향','good');
+          pickTarget();
+        }
+
+        // ---- 렌더
+        const g=cv.g, W=cv.w, H=cv.h, cx=W/2, cy=H/2;
+        const R=Math.max(40, Math.min(W,H)*0.34);
+        g.clearRect(0,0,W,H);
+        g.fillStyle='#080a0d'; g.fillRect(0,0,W,H);
+        // 어둠 속 물결
+        g.strokeStyle='rgba(92,200,255,.10)';
+        for(let i=0;i<6;i++){
+          g.beginPath();
+          for(let x=0;x<=W;x+=14) g.lineTo(x, cy+ (i-2.5)*22 + Math.sin(x*0.05+now()/700+i)*4);
+          g.stroke();
+        }
+        // 나침반 링
+        g.strokeStyle='#232b33'; g.lineWidth=2;
+        g.beginPath(); g.arc(cx,cy,R,0,7); g.stroke();
+        // 목표 방향 표시 (화면 기준: 목표가 위쪽에 오도록 -diff 회전)
+        const a=(-diff)*Math.PI/180 - Math.PI/2;
+        g.strokeStyle = ad<TOL ? '#4ade80' : '#ffb340'; g.lineWidth=3;
+        g.beginPath(); g.arc(cx,cy,R, a-TOL*Math.PI/180, a+TOL*Math.PI/180); g.stroke();
+        g.fillStyle=g.strokeStyle;
+        g.beginPath();
+        g.arc(cx+Math.cos(a)*R, cy+Math.sin(a)*R, 7, 0, 7); g.fill();
+
+        // 진행 게이지(원형)
+        g.strokeStyle='#5cc8ff'; g.lineWidth=5;
+        g.beginPath(); g.arc(cx,cy,R-14, -Math.PI/2, -Math.PI/2 + (onT/HOLD)*Math.PI*2); g.stroke();
+
+        // 중앙 화살표 (내가 보는 방향 = 항상 위)
+        g.save(); g.translate(cx,cy);
+        g.fillStyle= ad<TOL ? '#4ade80' : '#e7ecf2';
+        g.beginPath(); g.moveTo(0,-22); g.lineTo(13,16); g.lineTo(0,9); g.lineTo(-13,16); g.closePath(); g.fill();
+        g.restore();
+
+        g.fillStyle='#8b98a6'; g.font='12px monospace'; g.textAlign='center';
+        g.fillText(useSensor()?'COMPASS LIVE':'DRAG MODE', cx, H-14);
+        g.fillStyle= ad<TOL ? '#4ade80':'#ffb340'; g.font='700 15px sans-serif';
+        g.fillText(ad<TOL?'그대로 전진':(diff>0?'← 왼쪽으로 돌려라':'오른쪽으로 돌려라 →'), cx, 26);
+      },
+      destroy(){ pad.remove(); cv.dispose(); }
+    };
+  }
+};
+
+/* =======================================================================
+   STAGE 6 — 무기고 금고 : 진동 다이얼
+======================================================================= */
+const S6 = {
+  name:'무기고 다이얼', feat:'진동 + 회전 제스처',
+  story:'배수로 출구는 무기고를 지나야 한다. 캐비닛 다이얼은 세 자리, 눈으로는 알 수 없다.<br><b>다이얼을 원형으로 돌려라.</b> 정답에 가까워지면 손끝에 <b>진동</b>이 온다.',
+  clear:'철컥. 캐비닛이 열리고 절단기가 손에 들어왔다.',
+  mount(host, api){
+    const cv=makeCanvas(host);
+    const pad=document.createElement('div'); pad.className='tilt-pad'; host.appendChild(pad);
+
+    const btn=document.createElement('button');
+    btn.className='btn'; btn.textContent='이 숫자로 고정';
+    btn.style.cssText='position:absolute;left:12px;right:12px;bottom:12px;width:auto;margin:0;padding:13px';
+    host.appendChild(btn);
+
+    let val=0, acc=0, dragging=false, lastAng=0;
+    let stepIdx=0, tries=5, lastBuzz=0, flashT=0;
+    const targets=[Math.floor(rand(0,100)),Math.floor(rand(0,100)),Math.floor(rand(0,100))];
+
+    const cdist=(a,b)=>{ const d=Math.abs(a-b)%100; return Math.min(d,100-d); };
+
+    function angOf(e){
+      const r=pad.getBoundingClientRect();
+      return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2));
+    }
+    pad.addEventListener('pointerdown',e=>{ capture(pad,e.pointerId); dragging=true; lastAng=angOf(e); });
+    pad.addEventListener('pointermove',e=>{
+      if(!dragging) return;
+      const a=angOf(e);
+      let d=a-lastAng; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI;
+      lastAng=a;
+      acc += d/(2*Math.PI)*100;                 // 한 바퀴 = 100
+      const nv = ((Math.round(acc)%100)+100)%100;
+      if(nv!==val) Sfx.tick();                  // 눈금 소리
+      val = nv;
+    });
+    const up=()=>dragging=false;
+    pad.addEventListener('pointerup',up); pad.addEventListener('pointercancel',up);
+
+    btn.addEventListener('click',()=>{
+      const d=cdist(val,targets[stepIdx]);
+      if(d===0){
+        stepIdx++;
+        buzz([40,60,40,60,140]); Sfx.clunk();
+        if(stepIdx>=3){ api.done(); return; }
+        toast((stepIdx)+'번째 숫자 맞았다','good');
+      }else{
+        tries--; flashT=0.4;
+        api.hit('덜컹! 틀렸다 (남은 시도 '+tries+')', 6);
+        if(tries<=0){ tries=5; stepIdx=0; targets.forEach((_,i)=>targets[i]=Math.floor(rand(0,100))); toast('다이얼이 초기화됐다','bad'); }
+      }
+    });
+
+    api.hint('원을 손가락으로 문질러 돌려라. 진동이 잦아지면 정답이 가깝다.');
+
+    return {
+      update(dt){
+        flashT=Math.max(0,flashT-dt);
+        const d=cdist(val,targets[stepIdx]);
+        const heat=1-clamp(d/25,0,1);
+
+        // 진동 피드백: 가까울수록 촘촘
+        if(heat>0 && dragging){
+          const iv = lerp(500, 45, heat);
+          if(now()-lastBuzz>iv){ lastBuzz=now(); buzz(d===0?30:10+Math.round(heat*14)); }
+        }
+        api.status('자리 '+(stepIdx+1)+'/3   |   다이얼 '+String(val).padStart(2,'0')+'   |   남은 시도 '+tries);
+        api.progress((stepIdx + heat*0.9)/3);
+
+        // ---- 렌더
+        const g=cv.g, W=cv.w, H=cv.h, cx=W/2, cy=H/2-14, R=Math.min(W,H)*0.3;
+        g.clearRect(0,0,W,H);
+        g.fillStyle='#0d1116'; g.fillRect(0,0,W,H);
+        if(flashT>0){ g.fillStyle='rgba(255,77,77,'+(flashT*0.4)+')'; g.fillRect(0,0,W,H); }
+
+        // 열 감지 링
+        g.lineWidth=10; g.strokeStyle='#171d24';
+        g.beginPath(); g.arc(cx,cy,R+16,0,7); g.stroke();
+        g.strokeStyle=`rgba(${Math.round(lerp(60,255,heat))},${Math.round(lerp(90,140,heat))},${Math.round(lerp(120,60,heat))},.95)`;
+        g.beginPath(); g.arc(cx,cy,R+16,-Math.PI/2,-Math.PI/2+heat*Math.PI*2); g.stroke();
+
+        // 다이얼
+        g.save(); g.translate(cx,cy); g.rotate(-val/100*Math.PI*2);
+        g.fillStyle='#1a2129'; g.beginPath(); g.arc(0,0,R,0,7); g.fill();
+        g.strokeStyle='#2e3741'; g.lineWidth=2; g.stroke();
+        for(let i=0;i<100;i++){
+          const a=i/100*Math.PI*2 - Math.PI/2;
+          const big=i%10===0;
+          g.strokeStyle=big?'#8b98a6':'#39434e'; g.lineWidth=big?2:1;
+          g.beginPath();
+          g.moveTo(Math.cos(a)*(R-(big?16:9)), Math.sin(a)*(R-(big?16:9)));
+          g.lineTo(Math.cos(a)*R, Math.sin(a)*R); g.stroke();
+          if(big){
+            g.save(); g.translate(Math.cos(a)*(R-30), Math.sin(a)*(R-30)); g.rotate(val/100*Math.PI*2);
+            g.fillStyle='#6d7986'; g.font='11px monospace'; g.textAlign='center'; g.textBaseline='middle';
+            g.fillText(i,0,0); g.restore();
+          }
+        }
+        g.restore();
+
+        // 지시침
+        g.fillStyle='#ffb340';
+        g.beginPath(); g.moveTo(cx,cy-R-4); g.lineTo(cx-7,cy-R-20); g.lineTo(cx+7,cy-R-20); g.closePath(); g.fill();
+
+        g.fillStyle='#e7ecf2'; g.font='700 34px monospace'; g.textAlign='center'; g.textBaseline='middle';
+        g.fillText(String(val).padStart(2,'0'), cx, cy);
+        g.fillStyle='#8b98a6'; g.font='11px monospace';
+        g.fillText(heat>0.92?'거의 다 왔다':heat>0.6?'따뜻하다':heat>0.25?'미약한 진동':'아무 느낌 없다', cx, cy+26);
+      },
+      destroy(){ pad.remove(); btn.remove(); cv.dispose(); }
+    };
+  }
+};
+
+/* =======================================================================
+   STAGE 7 — 감시탑 서치라이트 : 카메라(밝기)
+======================================================================= */
+const S7 = {
+  name:'감시탑 아래', feat:'카메라 밝기 센서',
+  story:'운동장을 가로질러야 한다. 감시탑 라이트가 3번 쓸고 지나간다.<br>빛이 올 때마다 <b>카메라 렌즈를 손으로 완전히 덮어</b> 어둠 속으로 숨어라.',
+  clear:'라이트가 세 번 지나갔고, 당신은 세 번 사라졌다. 담장이 바로 앞이다.',
+  mount(host, api){
+    const wrap=document.createElement('div'); wrap.className='big';
+    wrap.innerHTML=`
+      <div class="glyph" id="s7-g">🔭</div>
+      <div class="caption" id="s7-cap">카메라 준비 중…</div>
+      <div class="pill" id="s7-pill">—</div>
+      <div class="meter"><div class="bar"><div class="bar-fill" id="s7-lv" style="background:linear-gradient(90deg,#12161b,#ffe9b0)"></div></div></div>`;
+    host.appendChild(wrap);
+    const G=$('#s7-g',wrap), cap=$('#s7-cap',wrap), pill=$('#s7-pill',wrap), lv=$('#s7-lv',wrap);
+    const glow=document.createElement('div');
+    glow.style.cssText='position:absolute;inset:0;background:radial-gradient(circle at 50% 0%,rgba(255,214,140,.9),transparent 65%);opacity:0;transition:opacity .25s';
+    host.appendChild(glow);
+
+    let cam=null, dead=false;
+    let amb=0.5, ambN=0, calT=0, calibrating=true;
+    let sweep=0, timer=0, state='wait';   // wait → warn → beam
+    let held=0, fbTouch=0;
+    const SWEEPS=3, WARN=1.6, BEAM=2.6, GAP=1.8;
+
+    host.addEventListener('pointerdown',()=>fbTouch++);
+    const relCount=()=>{ fbTouch=Math.max(0,fbTouch-1); };
+    host.addEventListener('pointerup',relCount);
+    host.addEventListener('pointercancel',relCount);
+
+    openCam().then(c=>{ if(dead){c.stop();return;} cam=c; })
+             .catch(()=>{ if(!dead){ calibrating=false; cap.textContent='카메라를 쓸 수 없다 → 화면을 손으로 덮어 숨어라'; api.hint('빛이 올 때 화면에 손가락 2개 이상을 대고 유지해라.'); } });
+
+    api.status('감시탑 라이트 대기');
+    api.hint('카메라 권한을 허용하면 렌즈를 덮어 플레이한다.');
+
+    function dark(){
+      if(cam){ return cam.brightness() < Math.max(0.05, amb*0.45); }
+      return fbTouch>=2;
+    }
+
+    return {
+      update(dt){
+        if(cam && calibrating){
+          calT+=dt;
+          const b=cam.brightness();
+          amb=(amb*ambN+b)/(ambN+1); ambN++;
+          lv.style.width=clamp(b*100,0,100)+'%';
+          cap.textContent='주변 밝기 측정 중… 렌즈를 가리지 마라';
+          pill.textContent='밝기 '+(b*100).toFixed(0)+'%';
+          if(calT>1.5){ calibrating=false; api.hint('빛이 올 때 렌즈를 손바닥으로 완전히 덮어라.'); }
+          return;
+        }
+
+        const b = cam ? cam.brightness() : (fbTouch>=2?0.02:0.6);
+        lv.style.width=clamp(b*100,0,100)+'%';
+        pill.textContent = cam ? ('밝기 '+(b*100).toFixed(0)+'% / 한계 '+(Math.max(0.05,amb*0.45)*100).toFixed(0)+'%')
+                               : ('손가락 '+fbTouch+'개');
+
+        timer+=dt;
+        if(state==='wait'){
+          glow.style.opacity=0; G.textContent='🔭';
+          cap.textContent='라이트가 돌아온다…';
+          if(timer>GAP){ state='warn'; timer=0; buzz([20,80,20]); Sfx.warn(); }
+        }else if(state==='warn'){
+          glow.style.opacity=0.25+0.2*Math.sin(now()/90);
+          G.textContent='⚠️'; cap.textContent='빛이 온다! 지금 렌즈를 덮어라!';
+          if(timer>WARN){ state='beam'; timer=0; held=0; }
+        }else{
+          glow.style.opacity=0.85;
+          const ok=dark();
+          if(ok){ held+=dt; G.textContent='🫥'; cap.textContent='완전한 어둠. 들키지 않았다.'; }
+          else   { G.textContent='😱'; cap.textContent='너무 밝다! 더 꽉 덮어라!'; }
+          if(timer>BEAM){
+            if(held > BEAM*0.75){
+              sweep++;
+              buzz([30,50,30]);
+              if(sweep>=SWEEPS){ api.done(); return; }
+              toast('라이트 '+sweep+'회 회피','good');
+            }else{
+              api.hit('빛에 노출됐다!', 9);
+            }
+            state='wait'; timer=0;
+          }
+        }
+        api.status('회피 '+sweep+' / '+SWEEPS+(state==='beam'?('   |   은폐 '+held.toFixed(1)+'초'):''));
+        api.progress((sweep + (state==='beam'?clamp(held/(BEAM*0.75),0,1):0))/SWEEPS);
+      },
+      destroy(){ dead=true; if(cam) cam.stop(); glow.remove(); }
+    };
+  }
+};
+
+/* =======================================================================
+   STAGE 8 — 최종 질주 : 흔들기(가속도) + 좌우 탭 회피
+   흔드는 동안에는 기울기 값이 흔들려 쓸 수 없다 → 회피는 화면 탭으로 받는다.
+======================================================================= */
+const S8 = {
+  name:'담장까지 질주', feat:'가속도(흔들기) + 좌우 탭',
+  story:'절단기로 철조망을 끊었다. 남은 건 100m의 맨땅.<br>'+
+        '<b>휴대폰을 크게 흔들어 달려라.</b> 장애물은 <b>화면 왼쪽·오른쪽을 탭</b>해 피한다.<br>40초 안에 담장을 넘어라.',
+  clear:'담장 위 철조망을 넘었다. 발밑은 이제 감옥 바깥의 흙이다.',
+  mount(host, api){
+    const cv=makeCanvas(host);
+    const shake=ShakeInput(host,'달리기\n(연타)');
+
+    const LANES3=[0.2, 0.5, 0.8];       // 세 갈래 길
+    let laneIdx=1, lane=LANES3[1];
+    let dist=0, speed=0, timeLeft=40, hits=0, cool=0, stepAcc=0;
+    const GOAL=100;
+    const obs=[];   // {d, x, r, kind}
+    let spawn=0;
+
+    /* 좌우 탭 — 흔들면서도 누를 수 있게 화면 절반씩 크게 잡는다 */
+    const pad=document.createElement('div');
+    pad.style.cssText='position:absolute;inset:0;display:flex;z-index:3;pointer-events:none';
+    const mk=(dir,label)=>{
+      const b=document.createElement('button');
+      b.textContent=label;
+      b.style.cssText='flex:1;appearance:none;border:0;background:transparent;color:rgba(139,152,166,.30);'+
+                      'font-size:34px;font-family:inherit;touch-action:none;pointer-events:auto';
+      b.addEventListener('pointerdown', e=>{
+        e.preventDefault();
+        laneIdx=clamp(laneIdx+dir,0,2); buzz(10);
+        b.style.background='rgba(255,179,64,.10)';
+        setTimeout(()=>{ b.style.background='transparent'; },110);
+      });
+      return b;
+    };
+    const gapEl=document.createElement('div');            // 가운데는 비워 둔다(연타 버튼 자리)
+    gapEl.style.cssText='flex:0 0 26%;pointer-events:none';
+    pad.appendChild(mk(-1,'◀')); pad.appendChild(gapEl); pad.appendChild(mk(1,'▶'));
+    host.appendChild(pad);
+
+    api.hint(Sensors.hasMotion() ? '팔을 크게 흔들어 달린다. 화면 좌우를 탭해 피한다.'
+                                  : '센서가 없다 → 가운데 버튼 연타로 달리고, 좌우를 탭해 피한다.');
+
+    return {
+      update(dt){
+        timeLeft-=dt;
+        const power=shake.poll(dt);
+
+        const target = power*11;                        // m/s 상한
+        speed = lerp(speed, target, 1-Math.pow(0.15,dt));
+        dist += speed*dt;
+        lane = lerp(lane, LANES3[laneIdx], 1-Math.pow(0.0009,dt));   // 탭하면 옆 갈래로 미끄러진다
+        cool=Math.max(0,cool-dt);
+
+        // 발소리 (속도에 비례)
+        stepAcc += speed*dt;
+        if(stepAcc > 1.5){ stepAcc=0; Sfx.step(); }
+
+        // 장애물 생성 (거리 기준)
+        spawn -= speed*dt;
+        if(spawn<=0){
+          spawn = rand(7,13);
+          const kind = Math.random()<0.45?'guard':'light';
+          // 장애물은 세 갈래 중 하나를 막는다 — 탭 한 번이면 반드시 피할 수 있다
+          const li = (Math.random()*3)|0;
+          obs.push({d:dist+55, x:LANES3[li], r:kind==='guard'?0.10:0.13, kind});
+        }
+        for(let i=obs.length-1;i>=0;i--){
+          const o=obs[i];
+          const rel=o.d-dist;
+          if(rel<-6){ obs.splice(i,1); continue; }
+          if(Math.abs(rel)<1.6 && Math.abs(o.x-lane)<o.r && cool<=0){
+            cool=1.1; hits++;
+            speed*=0.25;
+            api.hit(o.kind==='guard'?'간수와 부딪혔다!':'서치라이트에 걸렸다!', 7);
+          }
+        }
+
+        api.status('남은 거리 '+Math.max(0,GOAL-dist).toFixed(0)+'m   |   속도 '+speed.toFixed(0)+'m/s   |   '+timeLeft.toFixed(1)+'초');
+        api.progress(dist/GOAL);
+
+        if(dist>=GOAL){ api.done(); return; }
+        if(timeLeft<=0){
+          api.hit('시간 초과! 다시 달려라', 14);
+          timeLeft=25; dist=Math.max(0,dist-25); obs.length=0;
+        }
+
+        // ---- 렌더
+        const g=cv.g, W=cv.w, H=cv.h;
+        g.clearRect(0,0,W,H);
+        const grd=g.createLinearGradient(0,0,0,H);
+        grd.addColorStop(0,'#141a21'); grd.addColorStop(1,'#0a0d11');
+        g.fillStyle=grd; g.fillRect(0,0,W,H);
+
+        // 스크롤 지면
+        g.strokeStyle='rgba(139,152,166,.13)'; g.lineWidth=2;
+        for(let i=0;i<14;i++){
+          const y=((i*40 + dist*14)%(H+40))-20;
+          g.beginPath(); g.moveTo(0,y); g.lineTo(W,y); g.stroke();
+        }
+        // 담장 (남은 거리 표시)
+        const wallY = H - (GOAL-dist)/GOAL*H*1.9;
+        if(wallY>-40){
+          g.fillStyle='#2a333d'; g.fillRect(0, wallY-16, W, 16);
+          g.fillStyle='#8b98a6'; g.font='11px monospace'; g.textAlign='center';
+          g.fillText('담 장', W/2, wallY-22);
+        }
+
+        // 장애물
+        for(const o of obs){
+          const rel=o.d-dist;
+          const y = H - 60 - rel*(H*0.055);
+          if(y<-60||y>H+60) continue;
+          if(o.kind==='light'){
+            g.fillStyle='rgba(255,196,86,.16)';
+            g.beginPath(); g.ellipse(o.x*W, y, o.r*W, 26, 0,0,7); g.fill();
+            g.strokeStyle='rgba(255,196,86,.5)'; g.lineWidth=2; g.stroke();
+          }else{
+            g.font='24px serif'; g.textAlign='center'; g.textBaseline='middle';
+            g.fillText('👮', o.x*W, y);
+          }
+        }
+
+        // 플레이어
+        const px=lane*W, py=H-60;
+        g.save(); g.translate(px,py);
+        const bob=Math.sin(now()/(120-Math.min(90,speed*3)))*power*4;
+        g.translate(0,bob);
+        g.font='28px serif'; g.textAlign='center'; g.textBaseline='middle';
+        g.globalAlpha = cool>0 ? (0.35+0.65*Math.abs(Math.sin(now()/60))) : 1;
+        g.fillText('🏃', 0, 0);
+        g.restore(); g.globalAlpha=1;
+
+        // 속도 게이지
+        g.fillStyle='#171d24'; g.fillRect(10,10,10,H-20);
+        g.fillStyle='#ffb340';
+        const hh=(H-20)*clamp(speed/11,0,1);
+        g.fillRect(10,10+(H-20-hh),10,hh);
+        g.fillStyle= hits>0?'#ff8080':'#6d7986'; g.font='11px monospace'; g.textAlign='left';
+        g.fillText('충돌 '+hits, 26, 20);
+
+        // 세 갈래 길과 현재 위치 표시 — 탭으로 어디로 옮겨지는지 보이게
+        g.textAlign='center'; g.textBaseline='middle';
+        for(let i=0;i<3;i++){
+          const on = i===laneIdx;
+          g.fillStyle = on ? 'rgba(255,179,64,.85)' : 'rgba(139,152,166,.28)';
+          g.beginPath(); g.arc(LANES3[i]*W, H-22, on?5:3.5, 0, 7); g.fill();
+        }
+      },
+      destroy(){ shake.dispose(); pad.remove(); cv.dispose(); }
+    };
+  }
+};
+
+const STAGES=[S1,S2,S3,S4,S5,S6,S7,S8];
+
+/* =======================================================================
+   타이틀 기록 / 센서 점검
+======================================================================= */
+function paintTitleRecord(){
+  const d=Save.load(), el=$('#ti-rec'), cont=$('#btn-continue');
+  const lines=[];
+  if(d.best) lines.push('최고 기록 <b>'+d.best.grade+'</b> · 경보 '+d.best.alarm+'% · '+fmtSec(d.best.total));
+  if(d.reached >= STAGES.length) lines.push('전 관문 <b>완주</b> 기록 보유');
+  else if(d.reached) lines.push('최고 도달 <b>STAGE '+(d.reached+1)+'</b> — '+STAGES[d.reached].name);
+  el.hidden = lines.length===0;
+  el.innerHTML = lines.join('<br>');
+  cont.hidden = !(d.reached>0 && d.reached<STAGES.length);
+  if(!cont.hidden) cont.textContent='이어하기 (STAGE '+(d.reached+1)+')';
+}
+
+const DIAGS=[
+  {n:'가속도 (흔들기)', s:()=>Sensors.hasMotion(),
+   v:()=>{const m=Sensors.motion; return Sensors.hasMotion()? m.x.toFixed(1)+', '+m.y.toFixed(1)+', '+m.z.toFixed(1) : '이벤트 없음';},
+   fb:'연타 버튼'},
+  {n:'기울기 (자이로)', s:()=>Sensors.hasOrient(),
+   v:()=>Sensors.hasOrient()? 'β '+Sensors.orient.beta.toFixed(0)+'° γ '+Sensors.orient.gamma.toFixed(0)+'°' : '이벤트 없음',
+   fb:'화면 드래그'},
+  {n:'나침반 (방위)', s:()=>Sensors.hasHeading(),
+   v:()=>Sensors.hasHeading()? Math.round(Sensors.orient.heading)+'°' : '방위 정보 없음',
+   fb:'좌우 드래그'},
+  {n:'진동', s:()=>!!navigator.vibrate, v:()=>navigator.vibrate?'지원':'미지원', fb:'화면 열 게이지'},
+  {n:'멀티터치', s:()=>(navigator.maxTouchPoints||0)>=3,
+   v:()=>'최대 '+(navigator.maxTouchPoints||0)+'점', fb:'클릭 래치'},
+  {n:'마이크 / 카메라', s:()=>!!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&window.isSecureContext),
+   v:()=>!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia) ? '미지원'
+         : (window.isSecureContext ? '사용 가능 (권한 필요)' : 'https 아님 → 차단'),
+   fb:'터치 홀드'},
+];
+let diagTimer=null;
+function paintDiag(){
+  $('#diag-list').innerHTML = DIAGS.map(d=>{
+    const ok=d.s();
+    return '<div class="diag-row '+(ok?'ok':'no')+'"><span class="st">'+(ok?'✓':'✕')+'</span>'+
+           '<span class="nm">'+d.n+'</span><span class="vl">'+d.v()+
+           (ok?'':'<br>대체: '+d.fb)+'</span></div>';
+  }).join('');
+}
+async function openDiag(){
+  Sfx.init();
+  await Sensors.request();                    // iOS: 사용자 제스처 안에서 권한 요청
+  Game.screen('sc-diag');
+  paintDiag();
+  clearInterval(diagTimer);
+  diagTimer=setInterval(()=>{
+    if($('#sc-diag').classList.contains('show')) paintDiag();
+    else { clearInterval(diagTimer); diagTimer=null; }
+  }, 300);
+}
+
+/* =======================================================================
+   버튼 배선
+======================================================================= */
+$('#btn-start').addEventListener('click', ()=>Game.begin(0));
+$('#btn-continue').addEventListener('click', ()=>Game.begin(Save.load().reached||0));
+$('#btn-diag').addEventListener('click', ()=>openDiag());
+$('#btn-diag-back').addEventListener('click', ()=>{ Game.screen('sc-title'); paintTitleRecord(); });
+$('#btn-go').addEventListener('click', ()=>Game.play());
+$('#btn-next').addEventListener('click', ()=>Game.next());
+$('#btn-again-stage').addEventListener('click', ()=>Game.resume());
+$('#btn-retry').addEventListener('click', ()=>Game.begin(0));
+$('#btn-again').addEventListener('click', ()=>{ Game.screen('sc-title'); paintTitleRecord(); });
+
 /* 2부로 — 암전으로 덮은 뒤 넘어간다(같은 게임의 장면 전환처럼) */
-$('#btn-drive').onclick=()=>{ X.go('chase.html?from=prison', {jump:true}); };
-$('#btn-hub').onclick=()=>{ X.go('index.html'); };
+$('#btn-drive').addEventListener('click', ()=>{
+  try{ if(Game.wake) Game.wake.release(); }catch(e){}
+  X.go('chase.html?from=prison', {jump:true});
+});
+$('#btn-hub').addEventListener('click', ()=>X.go('index.html'));
 
 /* 챕터 표시 — 플레이 중에는 화면을 가리지 않게 숨긴다 */
-const chip = X.chip(1);
-const syncChip = () => chip.classList.toggle('hide', $('#sc-play').classList.contains('show'));
+const chapChip = X.chip(1);
+const syncChip = () => chapChip.classList.toggle('hide', $('#sc-play').classList.contains('show'));
 new MutationObserver(syncChip).observe($('#stack'), {subtree:true, attributes:true, attributeFilter:['class']});
 syncChip();
-document.addEventListener('gesturestart',e=>e.preventDefault());
-document.addEventListener('dblclick',e=>e.preventDefault());
+$('#hud-sfx').addEventListener('click', ()=>{
+  Sfx.enabled=!Sfx.enabled; sfxLabel();
+  Save.patch({sfx:Sfx.enabled});
+  if(Sfx.enabled){ Sfx.init(); Sfx.tick(); }
+});
+$('#stg-skip').addEventListener('click', ()=>{
+  Game.addAlarm(15);
+  if(Game.alarm<100){ toast('간수의 시선을 피해 우회했다','bad'); Game.cleared(); }
+});
+
+/* 초기화 */
+Sfx.enabled = Save.load().sfx !== false;
+sfxLabel();
+paintTitleRecord();
+
+/* 실수로 스크롤/줌 방지 */
+document.addEventListener('gesturestart', e=>e.preventDefault());
+document.addEventListener('dblclick', e=>e.preventDefault());
+document.addEventListener('touchmove', e=>{ if(e.touches.length>1) e.preventDefault(); }, {passive:false});
+
+/* 화면 복귀 시 센서 재확인 */
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) Sensors.attach(); });
 </script>
 </body>
 </html>
